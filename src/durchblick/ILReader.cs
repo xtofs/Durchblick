@@ -1,3 +1,5 @@
+namespace Durchblick;
+
 using System.Globalization;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -196,25 +198,47 @@ public sealed class ILReader
         }
     }
 
-    /// <summary>Human-readable form of the current operand, or null for <see cref="OperandType.InlineNone"/>. For dumps and debugging.</summary>
-    public string? OperandDisplay => OperandType switch
+    /// <summary>The operand of the current instruction as a reified <see cref="Operand"/> value.</summary>
+    public Operand Operand => OperandType switch
     {
-        OperandType.InlineNone => null,
-        OperandType.InlineI or OperandType.ShortInlineI => Int32Operand.ToString(CultureInfo.InvariantCulture),
-        OperandType.InlineI8 => Int64Operand.ToString(CultureInfo.InvariantCulture),
-        OperandType.ShortInlineR => Float32Operand.ToString(CultureInfo.InvariantCulture),
-        OperandType.InlineR => Float64Operand.ToString(CultureInfo.InvariantCulture),
-        OperandType.InlineVar or OperandType.ShortInlineVar => VariableIndex.ToString(CultureInfo.InvariantCulture),
-        OperandType.InlineBrTarget or OperandType.ShortInlineBrTarget => $"IL_{BranchTarget:X4}",
-        OperandType.InlineSwitch => string.Join(", ", SwitchTargets.Select(t => $"IL_{t:X4}")),
-        OperandType.InlineString => $"\"{StringOperand}\"",
-        OperandType.InlineMethod => MethodOperand.ToString(),
-        OperandType.InlineField => FieldOperand.ToString(),
-        OperandType.InlineType => TypeOperand.ToString(),
-        OperandType.InlineTok => MemberOperand.ToString(),
-        OperandType.InlineSig => Convert.ToHexString(SignatureOperand),
+        OperandType.InlineNone => Operand.None,
+        OperandType.InlineI or OperandType.ShortInlineI => Operand.ForInt32(Int32Operand, OperandType),
+        OperandType.InlineI8 => new Operand(Int64Operand),
+        OperandType.ShortInlineR => new Operand(Float32Operand),
+        OperandType.InlineR => new Operand(Float64Operand),
+        OperandType.InlineVar or OperandType.ShortInlineVar => Operand.ForVariableIndex(VariableIndex, OperandType),
+        OperandType.InlineBrTarget or OperandType.ShortInlineBrTarget => Operand.ForBranchTarget(BranchTarget, OperandType),
+        OperandType.InlineSwitch => new Operand(SwitchTargets),
+        OperandType.InlineString => new Operand(StringOperand),
+        OperandType.InlineMethod => new Operand(MethodOperand),
+        OperandType.InlineField => new Operand(FieldOperand),
+        OperandType.InlineType => new Operand(TypeOperand),
+        OperandType.InlineTok => Operand.ForToken(MemberOperand),
+        OperandType.InlineSig => new Operand(SignatureOperand),
         _ => throw new NotSupportedException(OperandType.ToString()),
     };
+
+    /// <summary>The current instruction as a reified <see cref="Instruction"/>.</summary>
+    public Instruction Current => new(Offset, OpCode, Operand);
+
+    /// <summary>Reads the remaining instructions as reified <see cref="Instruction"/> values.</summary>
+    public IEnumerable<Instruction> ToInstructions()
+    {
+        while (Read())
+        {
+            yield return Current;
+        }
+    }
+
+    /// <summary>Human-readable form of the current operand, or null for <see cref="OperandType.InlineNone"/>. For dumps and debugging.</summary>
+    public string? OperandDisplay
+    {
+        get
+        {
+            var display = Operand.ToString();
+            return display.Length == 0 ? null : display;
+        }
+    }
 
     private OperandType RequiredOperandType(OperandType expected, OperandType? alternative = null)
     {

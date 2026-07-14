@@ -5,10 +5,10 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug stack-simulation",
+            "name": "C#: Demo Debug",
             "type": "dotnet",
             "request": "launch",
-            "projectPath": "${workspaceFolder}/src/stack-simulation/stack-simulation.csproj"
+            "projectPath": "${workspaceFolder}/samples/demo/demo.csproj"
         }
     ]
 }

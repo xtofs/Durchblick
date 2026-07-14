@@ -1,9 +1,21 @@
-
+namespace Durchblick;
 
 using System.Globalization;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
+
+/// <summary>A reified IL instruction: opcode plus decoded operand at a given offset.</summary>
+public readonly record struct Instruction(int Offset, OpCode OpCode, Operand Operand)
+{
+    public override string ToString()
+    {
+        var operand = Operand.ToString();
+        return operand.Length == 0
+            ? $"IL_{Offset:X4}: {OpCode}"
+            : $"IL_{Offset:X4}: {OpCode} {operand}";
+    }
+}
 
 /// <summary>
 /// Tagged union for an IL instruction operand: holds either an object reference or 64 bits of
