@@ -1,15 +1,29 @@
 # Architecture
 
-Design decisions for this repository. [ARCH.md](ARCH.md) is background material on how
-decompilers work in general; this document records the decisions made _here_ and the
-invariants that must be preserved.
+Design decisions for this repository — how the code is structured and the invariants that
+must be preserved. For background on how decompilers work in general (the conceptual pipeline
+this project is climbing), see [FLOW.md](FLOW.md). For the current state of that climb and the
+plan of remaining work, see [ROADMAP.md](ROADMAP.md).
+
+## Pipeline and where each stage lives
+
+The conceptual pipeline (IL → CFG → expressions → structured control flow → AST → C#) maps
+onto the code as follows. Only the first stages are implemented today.
+
+| Stage | Type(s) | Status |
+| --- | --- | --- |
+| Read the IL byte stream | `ILReader` | Implemented |
+| Reify instructions/operands | `Instruction`, `Operand` | Implemented |
+| Build basic blocks / CFG | `BasicBlock`, `BasicBlockBuilder` | Prototype |
+| Simulate the stack into expressions | `Decompiler` | Prototype |
+| Reconstruct control flow, AST, print C# | — | Not started |
 
 ## IL reading: two layers, strictly separated
 
 ### Layer 1 — `ILReader`: non-reified pull cursor
 
-`ILReader` (src/stack-simulation/ILReader.cs) is a pull-based cursor over the raw IL
-byte stream of one method body, in the style of `XmlReader`/`Utf8JsonReader`:
+`ILReader` (`src/durchblick/ILReader.cs`) is a pull-based cursor over the raw IL byte stream
+of one method body, in the style of `XmlReader`/`Utf8JsonReader`:
 
 - `Read()` advances to the next instruction; `Seek(ilOffset)` repositions the cursor
   (IL branch targets are always valid instruction starts, so random access is cheap).

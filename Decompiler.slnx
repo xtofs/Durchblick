@@ -1,11 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
 <Solution>
-  <Folder Name="/samples/">
-    <Project Path="samples/demo/demo.csproj" />
-  </Folder>
-  <Folder Name="/specimens/">
-    <Project Path="specimens/add/add.csproj" />
-  </Folder>
-  <Folder Name="/src/">
-    <Project Path="src/durchblick/durchblick.csproj" />
-  </Folder>
+    <Folder Name="/specimens/">
+        <Project Path="specimens/add/add.csproj" />
+    </Folder>
+    <Folder Name="/src/">
+        <Project Path="src/durchblick/durchblick.csproj" />
+        <Project Path="src/cli/cli.csproj" />
+    </Folder>
 </Solution>

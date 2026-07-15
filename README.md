@@ -1,67 +1,48 @@
+# Durchblick
 
-## The actual algorithmic pipeline
-Below is the real pipeline used by tools like ILSpy, dnSpy, JetBrains dotPeek, and Rider’s decompiler.
-Each bullet begins with a Guided Link so you can dive deeper into any stage.
+*Durchblick* (German for "clear view" — seeing through to what something really is) is a
+decompiler for .NET IL. It reads the CIL byte stream of a compiled method and reconstructs
+higher-level, C#-like structure from it.
 
-### 1. IL parsing — read raw IL and metadata
-- Parse IL opcodes (variable‑length, stack‑based).
+The project is an early work in progress. The IL reader is solid; control-flow graph
+construction and stack-based expression reconstruction exist in prototype form. The later
+stages of a real decompiler — control-flow reconstruction, an AST, and a C# printer — are
+not built yet. See [ROADMAP.md](ROADMAP.md) for a full gap analysis and the phased plan.
 
-- Load method bodies, exception blocks, locals, metadata tokens.
+## Status
 
-- Build a linear instruction list.
+| Stage | State |
+| --- | --- |
+| IL parsing + reification | ✅ Working |
+| Control-flow graph construction | ⚠️ Prototype |
+| Stack simulation → expressions | ⚠️ Prototype (small opcode subset) |
+| Control-flow reconstruction (`if` / loops) | ❌ Not started |
+| AST + C# pretty-printing | ❌ Not started |
 
-This is trivial compared to the later phases.
+## Repository layout
 
-### 2. Control‑flow graph construction
+| Path | Contents |
+| --- | --- |
+| `src/durchblick` | The decompiler library |
+| `samples/demo` | Runnable demo that decompiles a specimen method |
+| `specimens/add` | Small C# inputs compiled and fed to the decompiler |
 
-- Identify basic blocks.
-- Resolve branch targets.
+## Building and running
 
-Build a CFG with edges for conditional/unconditional jumps.
+Requires the .NET 10 SDK.
 
-Detect exception regions and protected blocks.
+```sh
+dotnet build Decompiler.slnx
+dotnet run --project samples/demo
+```
 
-This is where the decompiler starts to “see” structure.
+The demo compiles `specimens/add`, selects a method, dumps its basic blocks, and prints the
+reconstructed expression.
 
-3. Stack simulation
-IL is stack‑based; C# is expression‑based.
-The decompiler simulates the evaluation stack to reconstruct expressions:
+## Documentation
 
-Push operands
-
-Pop operands for opcodes
-
-Build expression trees
-
-Track temporary locals introduced by the compiler
-
-This produces a low‑level expression graph.
-
-4. High‑level control‑flow reconstruction
-This is the hardest part.
-
-The decompiler must detect:
-
-if / else from branch patterns
-
-while loops from backward edges
-
-for loops from induction variables
-
-switch from jump tables
-
-try/catch/finally from exception blocks
-
-using from try/finally with Dispose
-
-foreach from enumerator patterns
-
-async/await state machines
-
-iterator state machines
-
-This is where pattern recognition becomes essential.
-
-pattern recognition of compiler‑lowered constructs
-
-async/await, foreach, using, lambdas, switch expressions, pattern matching, iterator blocks, etc.
+- [ARCHITECTURE.md](ARCHITECTURE.md) — how this codebase is structured and the invariants it
+  preserves.
+- [FLOW.md](FLOW.md) — background: how a decompiler works in general, the full conceptual
+  pipeline from IL to C#.
+- [ROADMAP.md](ROADMAP.md) — gap analysis and the phased plan for the remaining work.

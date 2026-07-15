@@ -8,15 +8,13 @@ internal class Program
     {
         var repoRoot = FindRepoRoot();
         var projectPath = Path.Combine(repoRoot, "specimens", "add", "add.csproj");
-        var methodInfo = Dotnet.CompileAndLoad(projectPath, "specimen.Class1", "Calculate2", out var assemblyPath);
+        var methodInfo = Dotnet.CompileAndLoad(projectPath, "specimen.Class1", "Calculate3", out var assemblyPath);
 
         if (methodInfo == null)
         {
             Console.WriteLine("No IL body available.");
             return;
         }
-
-        Metadata.Load(assemblyPath);
 
         Console.WriteLine();
 

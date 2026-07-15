@@ -1,7 +1,10 @@
 {
     "cSpell.words": [
+        "Brfalse",
+        "Brtrue",
         "Durchblick",
         "Ldarg",
+        "Ldloc",
         "Stloc"
     ]
 }
