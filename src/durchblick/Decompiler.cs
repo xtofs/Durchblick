@@ -17,8 +17,9 @@ public static class Decompiler
         foreach (var instruction in block.Instructions)
         {
             var opcode = instruction.OpCode;
+            var ilOpCode = opcode.ILOpCode;
             // switch on ILOpCode which is a single enum instead of the structured OpCode type
-            switch (opcode.ILOpCode)
+            switch (ilOpCode)
             {
                 case ILOpCode.Nop:
                     break;
@@ -40,8 +41,17 @@ public static class Decompiler
                     stack.Push(locals[1]);
                     break;
 
+                case ILOpCode.Ldc_i4_0:
+                    stack.Push(Expression.Constant(0));
+                    break;
+                case ILOpCode.Ldc_i4_1:
+                    stack.Push(Expression.Constant(1));
+                    break;
                 case ILOpCode.Ldc_i4_2:
                     stack.Push(Expression.Constant(2));
+                    break;
+                case ILOpCode.Ldc_i4_3:
+                    stack.Push(Expression.Constant(3));
                     break;
 
                 case ILOpCode.Stloc_0:
@@ -51,38 +61,56 @@ public static class Decompiler
                     locals[1] = stack.Pop();
                     break;
 
-
                 case ILOpCode.Add:
+                case ILOpCode.Mul:
+                case ILOpCode.Div:
+                case ILOpCode.Cgt:
+                    var op = BinaryOperators[ilOpCode];
                     var right = stack.Pop();
                     var left = stack.Pop();
-                    stack.Push(Expression.Add(left, right));
-                    break;
-                case ILOpCode.Mul:
-                    right = stack.Pop();
-                    left = stack.Pop();
-                    stack.Push(Expression.Multiply(left, right));
+                    stack.Push(op(left, right));
                     break;
 
+
                 case ILOpCode.Br_s:
-                case ILOpCode.Ret:
+                case ILOpCode.Brfalse_s:
+                case ILOpCode.Brtrue_s:
+                case var _ when opcode.FlowControl == FlowControl.Branch:
                     return;
+
                 default:
                     throw new NotSupportedException($"Unsupported IL opcode: {instruction.OpCode.ILOpCode}");
             }
         }
     }
 
+    static readonly Dictionary<ILOpCode, Func<Expression, Expression, Expression>> BinaryOperators = new()
+    {
+        { ILOpCode.Add, Expression.Add },
+        { ILOpCode.Mul, Expression.Multiply },
+        { ILOpCode.Div, Expression.Divide },
+        { ILOpCode.Sub, Expression.Subtract },
+
+        { ILOpCode.Ceq, Expression.Equal },
+        { ILOpCode.Cgt, Expression.GreaterThan },
+        { ILOpCode.Clt, Expression.LessThan },
+    };
+
     public static void GetParametersAndLocals(MethodInfo methodInfo, out ParameterExpression[] parameters, out Expression[] locals)
     {
-        var @this = Expression.Parameter(methodInfo.DeclaringType!, "this");
-        parameters = [@this, .. methodInfo.GetParameters().Select(p => Expression.Parameter(p.ParameterType, p.Name))];
+        parameters = [.. methodInfo.GetParameters().Select(p => Expression.Parameter(p.ParameterType, p.Name))];
+        if (!methodInfo.IsStatic)
+        {
+            var @this = Expression.Parameter(methodInfo.DeclaringType!, "this");
+            parameters = [@this, .. parameters];
+        }
 
         var mb = methodInfo.GetMethodBody()!;
         locals = [.. mb.LocalVariables.Select(v => Expression.Variable(v.LocalType, v.ToString()))];
     }
 
 
-    public static Expression? ToExpression( Dictionary<int, BasicBlock> blocks, Expression[] parameters, Expression[] locals)
+    public static Expression? ToExpression(Dictionary<int, BasicBlock> blocks, Expression[] parameters, Expression[] locals)
     {
         var stack = new Stack<Expression>();
         var block = blocks[0];
@@ -101,6 +129,13 @@ public static class Decompiler
                     var target = exit.Operand.GetBranchTarget();
                     block = blocks[target];
                     break;
+                case ILOpCode.Brfalse_s:
+                    target = exit.Operand.GetBranchTarget();
+                    block = blocks[target];
+                    break;
+
+                default:
+                    throw new Exception($"Unsupported IL opcode: {exit.OpCode.ILOpCode}");
             }
         }
         return null;
