@@ -44,11 +44,11 @@ branch normalization, clean reification layer. **Build on it; don't touch it.**
 | A2 | `FindSuccessorBlocks` `Cond_Branch` (`:61`) | Records only the taken target; **drops the fall-through edge**. `Branch` and `Cond_Branch` cases are byte-identical. | Conditional blocks have 1 successor instead of 2 → CFG is not a valid flow graph. |
 | A3 | `FindSuccessorBlocks` (`:56`) | No `InlineSwitch` case; calls `GetBranchTarget()` which throws on a switch operand. | Any `switch` crashes CFG construction. |
 | A4 | `FindSuccessorBlocks` `FlowControl.Next` (`:67`) | Returns `[]` instead of the fall-through block. (Latent today because A1 means blocks only ever end on branches; becomes live once A1 is fixed.) | Fall-through blocks lose their successor. |
-| A5 | `Decompiler.ToExpression` `Brfalse_s` (`:128`) | Treats `Brfalse_s` as an unconditional jump to its target — ignores fall-through, never emits an `if`. | `Calculate3`'s `if (a > 3)` is silently mis-reconstructed. |
+| ~~A5~~ ✅ | `Decompiler.ToExpression` `Brfalse_s` | Treated `Brfalse_s` as an unconditional jump — ignored fall-through, never emitted an `if`. | **Fixed.** `RunBlockLeaders` now stops at any terminator (flow-control check); `ToExpression` reconstructs a ternary from `brfalse`/`brtrue`. `Calculate3` → `IIF((a > 3), (a + b) * 2, a + b)`. |
 | A6 | `Decompiler.ToExpression` (`:112`,`:125`) | `blocks[target]` / `blocks[0]` throw `KeyNotFoundException` when a target isn't a block leader (a direct result of A1); `blocks[0]` assumes entry == offset 0. | Crashes on non-trivial input; fragile entry assumption. |
 | A7 | `Decompiler` switch (`:64`) vs `BinaryOperators` (`:87`) | `Sub`, `Ceq`, `Clt` are in the operator dictionary but **not** in the `case` labels → they fall to `default` and throw `NotSupportedException`. | Half-wired: subtraction and equality/less-than comparisons don't work despite looking supported. |
-| A8 | `Decompiler.GetParametersAndLocals` (`:101`) | Always prepends a `this` parameter, even for static methods. | For static methods every `ldarg.N` index is off by one. |
-| A9 | Cosmetic | `var exit = instruction; ;` (double `;`, unused) `BasicBlockBuilder.cs:34`; unused `Trace`/`Level` in `Decompiler`; unused usings. (~~stale `ARCHITECTURE.md` path~~ — fixed during docs reconciliation.) | Noise. |
+| ~~A8~~ ✅ | `Decompiler.GetParametersAndLocals` | Always prepended a `this` parameter, even for static methods. | **Fixed** (guarded by `!methodInfo.IsStatic`). |
+| ~~A9~~ ✅ | Cosmetic | `var exit = instruction; ;` (double `;`, unused); unused `Trace`/`Level` in `Decompiler`; unused usings; stale `ARCHITECTURE.md` path. | **Fixed.** Double-semicolon and `Trace`/`Level` removed; four dead usings dropped; docs path corrected during reconciliation. |
 
 ## B. Implementation gaps (right shape, incomplete coverage)
 

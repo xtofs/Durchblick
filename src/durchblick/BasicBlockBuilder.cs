@@ -31,7 +31,6 @@ public static class BasicBlockBuilder
             var instruction = instructions[i];
             if (BranchingFlowControl.Contains(instruction.OpCode.FlowControl))
             {
-                var exit = instruction; ;
                 var block = new BasicBlock(current[0].Offset, [.. current, instruction]);
                 blocks.Add(block);
                 current = [];

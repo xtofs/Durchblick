@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="UTF-8"?>
 <Solution>
     <Folder Name="/specimens/">
         <Project Path="specimens/add/add.csproj" />
@@ -6,5 +6,8 @@
     <Folder Name="/src/">
         <Project Path="src/durchblick/durchblick.csproj" />
         <Project Path="src/cli/cli.csproj" />
+    </Folder>
+    <Folder Name="/tests/">
+        <Project Path="tests/durchblick.tests/durchblick.tests.csproj" />
     </Folder>
 </Solution>

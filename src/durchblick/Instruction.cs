@@ -85,6 +85,7 @@ public readonly struct Operand
 
     // --- Guarded typed access ---
 
+
     public int GetInt32()
     {
         Require(OperandType.InlineI, OperandType.ShortInlineI);
@@ -168,6 +169,7 @@ public readonly struct Operand
         Require(OperandType.InlineSig);
         return (byte[])_object!;
     }
+
 
     /// <summary>Human-readable form of the operand; empty for <see cref="OperandType.InlineNone"/>.</summary>
     public override string ToString() => OperandType switch
