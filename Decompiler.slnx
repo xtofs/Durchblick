@@ -1,9 +1,13 @@
-<?xml version="1.0" encoding="UTF-8"?>
+
 <Solution>
+    <Folder Name="/samples/">
+        <Project Path="samples/CodeModelDemo/CodeModelDemo.csproj" />
+    </Folder>
     <Folder Name="/specimens/">
         <Project Path="specimens/add/add.csproj" />
     </Folder>
     <Folder Name="/src/">
+        <Project Path="src/CSharpCodeModel/CSharpCodeModel.csproj" />
         <Project Path="src/durchblick/durchblick.csproj" />
         <Project Path="src/cli/cli.csproj" />
     </Folder>
