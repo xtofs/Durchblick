@@ -5,9 +5,10 @@ decompiler for .NET IL. It reads the CIL byte stream of a compiled method and re
 higher-level, C#-like structure from it.
 
 The project is an early work in progress. The IL reader is solid; control-flow graph
-construction and stack-based expression reconstruction exist in prototype form. The later
-stages of a real decompiler — control-flow reconstruction, an AST, and a C# printer — are
-not built yet. See [ROADMAP.md](ROADMAP.md) for a full gap analysis and the phased plan.
+construction and stack-based expression reconstruction exist in prototype form; the target
+C# code model (AST, semantic binding, formatting) exists but is not yet produced by the
+decompiler. See [DESIGN.md](DESIGN.md) for the architecture, background, and the full gap
+analysis and phased plan.
 
 ## Status
 
@@ -17,32 +18,41 @@ not built yet. See [ROADMAP.md](ROADMAP.md) for a full gap analysis and the phas
 | Control-flow graph construction | ⚠️ Prototype |
 | Stack simulation → expressions | ⚠️ Prototype (small opcode subset) |
 | Control-flow reconstruction (`if` / loops) | ❌ Not started |
-| AST + C# pretty-printing | ❌ Not started |
+| C# code model (AST + semantics + formatter) | ✅ Model exists; not wired to decompilation |
 
 ## Repository layout
 
-| Path | Contents |
-| --- | --- |
-| `src/durchblick` | The decompiler library |
-| `samples/demo` | Runnable demo that decompiles a specimen method |
-| `specimens/add` | Small C# inputs compiled and fed to the decompiler |
+Everything lives in a single class library, `src/Durchblick`, whose folders mirror the
+decompiler pipeline:
+
+| Path | Namespace | Contents |
+| --- | --- | --- |
+| `src/Durchblick/IL` | `Durchblick.IL` | IL reader, reified instructions and operands |
+| `src/Durchblick/ControlFlow` | `Durchblick.ControlFlow` | Basic blocks and CFG construction |
+| `src/Durchblick/Decompilation` | `Durchblick.Decompilation` | Stack simulation → expressions |
+| `src/Durchblick/Metadata` | `Durchblick.Metadata` | PE/PDB reading spike (unintegrated) |
+| `src/Durchblick/CSharp` | `Durchblick.CSharp.*` | The output model: C# AST, semantic binding, formatting |
+| `src/Durchblick/Collections` | `Durchblick.Collections` | Immutable collection used by the AST |
+| `samples/disassemble` | — | Demo: decompiles a specimen method end to end |
+| `samples/CodeModelDemo` | — | Demo: builds, binds, and formats a C# AST by hand |
+| `specimens/add` | — | Small C# inputs compiled and fed to the decompiler |
+| `tests/Durchblick.Tests` | — | Specimen-driven xUnit tests |
 
 ## Building and running
 
 Requires the .NET 10 SDK.
 
 ```sh
-dotnet build Decompiler.slnx
-dotnet run --project samples/demo
+dotnet build Durchblick.slnx
+dotnet test
+dotnet run --project samples/disassemble
+dotnet run --project samples/CodeModelDemo
 ```
 
-The demo compiles `specimens/add`, selects a method, dumps its basic blocks, and prints the
-reconstructed expression.
+The disassemble demo compiles `specimens/add`, selects a method, dumps its basic blocks, and
+prints the reconstructed expression.
 
 ## Documentation
 
-- [ARCHITECTURE.md](ARCHITECTURE.md) — how this codebase is structured and the invariants it
-  preserves.
-- [FLOW.md](FLOW.md) — background: how a decompiler works in general, the full conceptual
-  pipeline from IL to C#.
-- [ROADMAP.md](ROADMAP.md) — gap analysis and the phased plan for the remaining work.
+- [DESIGN.md](DESIGN.md) — architecture and invariants, background on how decompilers work,
+  the C# code model, and the roadmap of remaining work.

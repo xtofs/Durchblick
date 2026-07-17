@@ -1,0 +1,16 @@
+
+<Solution>
+    <Folder Name="/samples/">
+        <Project Path="samples/CodeModel/CodeModel.csproj" />
+        <Project Path="samples/disassemble/disassemble.csproj" />
+    </Folder>
+    <Folder Name="/specimens/">
+        <Project Path="specimens/add/add.csproj" />
+    </Folder>
+    <Folder Name="/src/">
+        <Project Path="src/Durchblick/Durchblick.csproj" />
+    </Folder>
+    <Folder Name="/tests/">
+        <Project Path="tests/Durchblick.Tests/Durchblick.Tests.csproj" />
+    </Folder>
+</Solution>
