@@ -3,6 +3,7 @@
     <Folder Name="/samples/">
         <Project Path="samples/CodeModel/CodeModel.csproj" />
         <Project Path="samples/disassemble/disassemble.csproj" />
+        <Project Path="samples/OpCodeTable/OpCodeTable.csproj" />
     </Folder>
     <Folder Name="/specimens/">
         <Project Path="specimens/add/add.csproj" />

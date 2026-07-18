@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.Linq.Expressions;
+using System.Reflection;
 using Durchblick.ControlFlow;
 using Durchblick.Decompilation;
 
@@ -7,34 +8,38 @@ internal class Program
 {
     private static void Main(string[] args)
     {
+
+
         var repoRoot = FindRepoRoot();
         var projectPath = Path.Combine(repoRoot, "specimens", "add", "add.csproj");
-        var methodInfo = Dotnet.CompileAndLoad(projectPath, "specimen.Class1", "Calculate3", out var assemblyPath);
+        var assembly = Dotnet.CompileAndLoad(projectPath, out var assemblyPath);
 
-        if (methodInfo == null)
+        foreach (var type in assembly!.GetTypes())
         {
-            Console.WriteLine("No IL body available.");
-            return;
-        }
-
-        Console.WriteLine();
-
-        var blocks = BasicBlockBuilder.Build(methodInfo);
-
-        foreach (var block in blocks)
-        {
-            Console.WriteLine($"block IL_{block.StartOffset:X4}  [{string.Join(", ", from e in block.Targets select string.Format("IL_{0:X4}", e.StartOffset))}]");
-            foreach (var instruction in block.Instructions)
+            foreach (var method in type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly))
             {
-                Console.WriteLine($"    {instruction}");
+                var cfg = BasicBlockBuilder.Build(method);
+
+                Console.WriteLine($"{type.Name}.{method.Name}");
+                foreach (var block in cfg.Blocks)
+                {
+                    Console.WriteLine($"    block IL_{cfg.Instructions[block.StartIndex].Offset:X4}  [{string.Join(", ", from s in block.Successors select string.Format("IL_{0:X4}", cfg.Instructions[cfg.Blocks[s].StartIndex].Offset))}]");
+                    foreach (var instruction in cfg.Instructions[block.StartIndex..(block.EndIndex + 1)])
+                    {
+                        Console.WriteLine($"        {instruction}");
+                    }
+                }
             }
         }
 
-        var map = blocks.ToDictionary(b => b.StartOffset);
-        Decompiler.GetParametersAndLocals(methodInfo, out var parameters, out var locals);
 
-        var expr = Decompiler.ToExpression(map, parameters, locals);
-        Console.WriteLine(expr);
+
+
+        // var map = blocks.ToDictionary(b => b.StartOffset);
+        // Decompiler.GetParametersAndLocals(methodInfo, out var parameters, out var locals);
+
+        // var expr = Decompiler.ToExpression(map, parameters, locals);
+        // Console.WriteLine(expr);
 
     }
 

@@ -3,6 +3,7 @@ namespace Durchblick.IL;
 using System.Globalization;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Reflection.Metadata;
 using System.Runtime.CompilerServices;
 
 /// <summary>A reified IL instruction: opcode plus decoded operand at a given offset.</summary>
@@ -203,4 +204,16 @@ public readonly struct Operand
         operandType == first || operandType == second
             ? operandType
             : throw new ArgumentOutOfRangeException(nameof(operandType), operandType, $"Expected {first} or {second}.");
+}
+
+public static class InstructionExtensions
+{
+    extension(Instruction instruction)
+    {
+        public ILOpCode ILOpCode => instruction.OpCode.ILOpCode;
+
+        public FlowControl FlowControl => instruction.OpCode.FlowControl;
+
+        public OperandType OperandType => instruction.OpCode.OperandType;
+    }
 }

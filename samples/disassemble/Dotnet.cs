@@ -4,18 +4,24 @@ using System.Text.RegularExpressions;
 
 class Dotnet
 {
-    public static MethodInfo? CompileAndLoad(string projectPath, string typeName, string methodName, out string assemblyPath)
+
+    public static MethodInfo? GetMethod(Assembly assembly, string typeName, string methodName)
+    {
+        const BindingFlags Core = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly;
+        return assembly.GetType(typeName.Trim())?.GetMethod(methodName.Trim(), Core);
+    }
+
+
+    public const BindingFlags BindingFlagsAll = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance;
+
+    public static Assembly? CompileAndLoad(string projectPath, out string assemblyPath)
     {
         string stdout = Build(projectPath);
 
         assemblyPath = ExtractAssemblyPath(stdout);
         var context = System.Runtime.Loader.AssemblyLoadContext.Default;
         var assembly = context.LoadFromAssemblyPath(assemblyPath);
-        var method = assembly.GetType(typeName.Trim())?.GetMethod(methodName.Trim(), BindingFlagsAll);
-
-        // Console.WriteLine($"assembly={assembly.FullName}");
-        // Console.WriteLine($"method={method}");
-        return method;
+        return assembly;
     }
 
     private static string Build(string projectPath)
@@ -55,5 +61,4 @@ class Dotnet
 
 
 
-    public const BindingFlags BindingFlagsAll = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance;
 }
