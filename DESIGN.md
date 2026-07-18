@@ -186,17 +186,17 @@ The remaining work separates into three kinds of problem, triaged independently:
 
 ### Current maturity
 
-| Pipeline stage                           | Location                              | Status                                                         |
-| ---------------------------------------- | ------------------------------------- | -------------------------------------------------------------- |
-| 1. IL parsing + reification              | `Durchblick.IL`                       | ✅ Solid, near-complete                                        |
-| 2. CFG construction                      | `Durchblick.ControlFlow`              | ⚠️ Prototype, buggy                                            |
-| 3. Stack simulation                      | `Durchblick.Decompilation.Decompiler` | ⚠️ Hardcoded ~15 opcodes                                       |
-| 4. Control-flow reconstruction           | —                                     | ❌ Not started                                                 |
-| 5–8. Patterns / AST production / printer | —                                     | ❌ Not started (AST _model_ exists)                            |
-| Output AST + formatter                   | `Durchblick.CSharp.*`                 | ✅ Model + basic formatter                                     |
-| Semantic binding                         | `Durchblick.CSharp.Semantics`         | ⚠️ Exists, role undefined                                      |
-| Metadata / PDB symbols                   | `Durchblick.Metadata`                 | ⚠️ Unintegrated spike                                          |
-| Tests                                    | `tests/Durchblick.Tests`              | ⚠️ Specimen harness + 2 tests; no CFG/simulator/model coverage |
+| Pipeline stage                           | Location                              | Status                                                      |
+| ---------------------------------------- | ------------------------------------- | ----------------------------------------------------------- |
+| 1. IL parsing + reification              | `Durchblick.IL`                       | ✅ Solid, near-complete                                     |
+| 2. CFG construction                      | `Durchblick.ControlFlow`              | ⚠️ Prototype, covers leaders/successor edges                |
+| 3. Stack simulation                      | `Durchblick.Decompilation.Decompiler` | ⚠️ Straight-line expression prototype                       |
+| 4. Control-flow reconstruction           | —                                     | ❌ Not started                                              |
+| 5–8. Patterns / AST production / printer | —                                     | ❌ Not started (AST _model_ exists)                         |
+| Output AST + formatter                   | `Durchblick.CSharp.*`                 | ✅ Model + basic formatter                                  |
+| Semantic binding                         | `Durchblick.CSharp.Semantics`         | ⚠️ Exists, role undefined                                   |
+| Metadata / PDB symbols                   | `Durchblick.Metadata`                 | ⚠️ Unintegrated spike                                       |
+| Tests                                    | `tests/Durchblick.Tests`              | ⚠️ Specimen harness + CFG and expression-simulator coverage |
 
 `ILReader` is the strongest asset and needs no rework: zero-alloc pull cursor, lazy operand
 decoding, correct 1-/2-byte opcode tables, correct `InlineSwitch` sizing, absolute-offset
@@ -204,21 +204,21 @@ branch normalization, clean reification layer. **Build on it; don't touch it.**
 
 ### A. Mistakes (existing code is wrong)
 
-| #         | Location                                        | Defect                                                                                                                                                         | Consequence                                                                                                          |
-| --------- | ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| A1        | `BasicBlockBuilder.Build`                       | Only splits blocks _after_ a branch/return/throw; never _before_ a branch target. The correct `FindLeaders` is written but commented out and never called.     | Any target landing mid-run (loops, backward edges) is not a block boundary → wrong blocks.                           |
-| A2        | `FindSuccessorBlocks`, `Cond_Branch` case       | Records only the taken target; **drops the fall-through edge**. `Branch` and `Cond_Branch` cases are byte-identical.                                           | Conditional blocks have 1 successor instead of 2 → CFG is not a valid flow graph.                                    |
-| A3        | `FindSuccessorBlocks`                           | No `InlineSwitch` case; calls `GetBranchTarget()` which throws on a switch operand.                                                                            | Any `switch` crashes CFG construction.                                                                               |
-| A4        | `FindSuccessorBlocks`, `FlowControl.Next` case  | Returns `[]` instead of the fall-through block. (Latent today because A1 means blocks only ever end on branches; becomes live once A1 is fixed.)               | Fall-through blocks lose their successor.                                                                            |
-| ~~A5~~ ✅ | `Decompiler.ToExpression`, `Brfalse_s`          | Treated `Brfalse_s` as an unconditional jump.                                                                                                                  | **Fixed.** `RunBlockLeaders` stops at any terminator; `ToExpression` reconstructs a ternary from `brfalse`/`brtrue`. |
-| A6        | `Decompiler.ToExpression`                       | `blocks[target]` / `blocks[0]` throw `KeyNotFoundException` when a target isn't a block leader (a direct result of A1); `blocks[0]` assumes entry == offset 0. | Crashes on non-trivial input; fragile entry assumption.                                                              |
-| A7        | `Decompiler` opcode switch vs `BinaryOperators` | `Sub`, `Ceq`, `Clt` are in the operator dictionary but **not** in the `case` labels → they fall to `default` and throw `NotSupportedException`.                | Subtraction and equality/less-than comparisons don't work despite looking supported.                                 |
-| ~~A8~~ ✅ | `Decompiler.GetParametersAndLocals`             | Always prepended a `this` parameter, even for static methods.                                                                                                  | **Fixed** (guarded by `!methodInfo.IsStatic`).                                                                       |
-| ~~A9~~ ✅ | Cosmetic                                        | Dead code, unused usings, stale doc paths.                                                                                                                     | **Fixed.**                                                                                                           |
+| #         | Location                                     | Defect                                                                               | Consequence                                                                                  |
+| --------- | -------------------------------------------- | ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------- |
+| ~~A1~~ ✅ | `BasicBlockBuilder.Build`                    | Only split blocks _after_ a branch/return/throw; never _before_ a branch target.     | **Fixed.** Leaders are computed in instruction-index space, including branch/switch targets. |
+| ~~A2~~ ✅ | Successor computation, `Cond_Branch` case    | Recorded only the taken target; **dropped the fall-through edge**.                   | **Fixed.** Conditional branches preserve target edge(s) and fall-through edge.               |
+| ~~A3~~ ✅ | Successor computation                        | No `InlineSwitch` case; called `GetBranchTarget()` which throws on a switch operand. | **Fixed.** Switch targets are handled in case order.                                         |
+| ~~A4~~ ✅ | Successor computation, fall-through case     | Returned `[]` instead of the fall-through block.                                     | **Fixed.** Non-terminating blocks point to the next block.                                   |
+| A5        | Control-flow expression reconstruction       | Branching control flow is intentionally rejected by expression decompilation.        | `if`/ternary/loop reconstruction needs a separate structuring pass.                          |
+| ~~A6~~ ✅ | Decompiler block addressing                  | Old prototype used offset-keyed block maps and assumed entry offset `0`.             | **Fixed.** Current expression prototype consumes the index-based CFG.                        |
+| ~~A7~~ ✅ | Decompiler opcode switch vs binary operators | `Sub`, `Ceq`, `Clt` were in the operator dictionary but not in the simulator switch. | **Fixed for the straight-line prototype.**                                                   |
+| ~~A8~~ ✅ | Decompiler parameter handling                | Old prototype always prepended a `this` parameter, even for static methods.          | **Fixed** (guarded by `!methodInfo.IsStatic`).                                               |
+| ~~A9~~ ✅ | Cosmetic                                     | Dead code, unused usings, stale doc paths.                                           | **Fixed.**                                                                                   |
 
 ### B. Implementation gaps (right shape, incomplete coverage)
 
-- **B1 — `Decompiler.RunBlockLeaders` covers ~15 hardcoded opcodes.** Missing, at minimum:
+- **B1 — `Decompiler.DecompileExpression` covers a small straight-line opcode subset.** Missing, at minimum:
   - Loads: `ldarg.3`, `ldarg.s`, `ldarg`, `ldloc.2/3`, `ldloc.s`, `ldloc`, `ldc.i4.4..8`,
     `ldc.i4.m1`, `ldc.i4.s`, `ldc.i4`, `ldc.i8`, `ldc.r4/r8`, `ldstr`, `ldnull`, `ldarga`/`ldloca`.
   - Stores: `starg`, `stloc.2/3`, `stloc.s`, `stloc`.
@@ -230,24 +230,26 @@ branch normalization, clean reification layer. **Build on it; don't touch it.**
 - **B2 — operand-carrying forms unused.** The reader exposes `VariableIndex`/`Int32Operand`;
   the simulator never consumes them, so only the compact `.0/.1/.2` forms work. Drive
   loads/stores/constants off the operand instead of enumerating fixed indices.
-- **B3 — only `Calculate3` is exercised.** `Calculate`/`Calculate2` and any loop/switch case
-  are never run; no coverage of the paths that expose A1–A4.
+- **B3 — statement/control-flow tests are still missing.** `Calculate`/`Calculate2` cover
+  straight-line expressions, and `Calculate3` covers CFG shape plus the current unsupported
+  branching boundary. Loop/switch statement reconstruction is not covered because it does not
+  exist yet.
 - **B4 — the C# code model has no tests.** Syntax construction, binding, and formatting are
   exercised only by `samples/CodeModelDemo`.
 
 ### C. Architecture / flow gaps (not yet designed — decisions required)
 
 - **C1 — Output IR.** ~~Decision: dedicated C# AST vs. LINQ Expressions.~~ **Decided:** the
-  dedicated AST is `Durchblick.CSharp.Syntax`, now part of this library. Remaining work: the
-  decompiler still _produces_ `System.Linq.Expressions`; it must be retargeted to emit
-  `Durchblick.CSharp.Syntax` nodes. LINQ Expressions cannot represent statements,
-  side-effecting assignments, labels/gotos, or multiple returns.
+  dedicated AST is `Durchblick.CSharp.Syntax`, now part of this library. The straight-line
+  expression prototype emits `Durchblick.CSharp.Syntax.Expression` nodes. Remaining work:
+  method-body and control-flow reconstruction must emit `Durchblick.CSharp.Syntax.Statement`
+  nodes.
 - **C2 — Control-flow structuring does not exist.** No `if/else`, loops, or `switch`
-  recovery; `ToExpression` returns a single expression, not a body. Needs a structuring pass
-  over the CFG (dominator tree + natural-loop / interval analysis, Cifuentes-style) emitting
-  structured statements. This is the heart of the project.
+  recovery; expression decompilation deliberately rejects branching control flow. Needs a
+  structuring pass over the CFG (dominator tree + natural-loop / interval analysis,
+  Cifuentes-style) emitting structured statements. This is the heart of the project.
 - **C3 — Metadata source fork.** Two unreconciled ways to read an assembly coexist: the
-  reflection path (`MethodInfo` → `ILReader`/`Decompiler`, plus `Dotnet.CompileAndLoad`) and
+  reflection path (`MethodInfo` → `ILReader`/`BasicBlockBuilder`/`Decompiler`, plus `Dotnet.CompileAndLoad`) and
   the `System.Reflection.Metadata` PE/PDB path (`Durchblick.Metadata`, unintegrated).
   **Decision:** converge the real pipeline on `MetadataReader` (no assembly load/execution,
   full metadata, portable PDB), keeping reflection only in the specimen test harness.
@@ -260,8 +262,8 @@ branch normalization, clean reification layer. **Build on it; don't touch it.**
   but nothing consumes them; locals are named via `LocalVariableInfo.ToString()`. Design how
   PDB names flow into the AST.
 - **C6 — No real pretty-printer.** `CodeFormatter` renders the AST but precedence-aware
-  minimal parenthesization and idiomatic output are unstarted. Decompiler output today is
-  `Expression.ToString()` / block dumps.
+  minimal parenthesization and idiomatic output are unstarted. The disassemble demo has a
+  small local expression renderer for the current syntax-expression subset.
 - **C7 — Semantic model's role.** `Durchblick.CSharp.Semantics` binds hand-built ASTs, but
   the decompiler has no defined use for it yet. Decide whether reconstructed code gets bound
   (e.g., to validate output or resolve names) or whether the semantic layer serves a
@@ -280,15 +282,15 @@ Ordered by dependency. Each phase is independently verifiable.
 
 **Phase 1 — Fix the CFG** _(A1–A4, A6)_
 
-- [ ] Wire up `FindLeaders`; build blocks by cutting at leader boundaries (two-pass).
-- [ ] Successors: `Branch`→[target]; `Cond_Branch`→[target, fall-through];
+- [x] Wire up leader detection; build blocks by cutting at leader boundaries.
+- [x] Successors: `Branch`→[target]; `Cond_Branch`→[target, fall-through];
       `Switch`→[targets…, fall-through]; `Return`/`Throw`→[]; fall-through block→[next].
-- [ ] Golden CFG tests for `Calculate1/2/3` + a loop specimen + a switch specimen.
+- [ ] Golden CFG tests for a loop specimen and a compiled switch specimen.
 
 **Phase 2 — Complete the linear simulator** _(B1–B3, A7)_
 
-- [ ] Broaden `RunBlockLeaders` to full straight-line opcode coverage, operand-driven (B2).
-- [ ] Wire `sub`/`ceq`/`clt` into the switch (A7).
+- [ ] Broaden `Decompiler.DecompileExpression` to full straight-line opcode coverage, operand-driven (B2).
+- [x] Wire `sub`/`ceq`/`clt` into the straight-line simulator (A7).
 - [ ] Add `call`/`newobj`/field/`dup`/`pop`/`conv` handling.
 - [ ] Per-opcode simulator tests.
 
@@ -297,7 +299,7 @@ Ordered by dependency. Each phase is independently verifiable.
 - [ ] Dominator tree + natural-loop detection over the CFG.
 - [ ] Structurer: `if/else` from conditional diamonds, `while`/`do` from back edges,
       sequences, multiple returns — emitting `Durchblick.CSharp.Syntax` statements (C1).
-- [ ] Replace single-expression `ToExpression` with `ToBody`/`ToStatements`.
+- [ ] Add `ToBody`/`ToStatements` for structured method-body reconstruction.
 - [ ] Golden tests: `Calculate3` → real `if`; a loop specimen → `while`.
 
 **Phase 4 — Metadata & symbols** _(C3, C5, C4-read)_
@@ -319,8 +321,9 @@ Ordered by dependency. Each phase is independently verifiable.
 
 - Build: `dotnet build Durchblick.slnx`
 - Tests: `dotnet test`
-- Demo: `dotnet run --project samples/disassemble` (compiles `specimens/add`, dumps blocks,
-  prints the reconstructed expression); `dotnet run --project samples/CodeModelDemo`
+- Demo: `dotnet run --project samples/disassemble` (compiles `specimens/add`, dumps blocks
+  and supported straight-line expressions);
+  `dotnet run --project samples/CodeModelDemo`
   (builds and formats an AST, binds it, reports semantic info).
 - End-to-end target per phase: compile a specimen with the C# compiler, decompile it, and
   assert the reconstructed structure (Phase 1: block/edge shape; Phase 3: `if`/loop

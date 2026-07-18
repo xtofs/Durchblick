@@ -1,42 +1,42 @@
 # Durchblick
 
-*Durchblick* (German for "clear view" — seeing through to what something really is) is a
+_Durchblick_ (German for "clear view" — seeing through to what something really is) is a
 decompiler for .NET IL. It reads the CIL byte stream of a compiled method and reconstructs
 higher-level, C#-like structure from it.
 
 The project is an early work in progress. The IL reader is solid; control-flow graph
-construction and stack-based expression reconstruction exist in prototype form; the target
-C# code model (AST, semantic binding, formatting) exists but is not yet produced by the
-decompiler. See [DESIGN.md](DESIGN.md) for the architecture, background, and the full gap
-analysis and phased plan.
+construction exists in prototype form; and a small straight-line stack simulator can rebuild
+simple returned expressions into the target C# code model. Full control-flow reconstruction and
+method-body generation are not started yet. See [DESIGN.md](DESIGN.md) for the architecture,
+background, and the full gap analysis and phased plan.
 
 ## Status
 
-| Stage | State |
-| --- | --- |
-| IL parsing + reification | ✅ Working |
-| Control-flow graph construction | ⚠️ Prototype |
-| Stack simulation → expressions | ⚠️ Prototype (small opcode subset) |
-| Control-flow reconstruction (`if` / loops) | ❌ Not started |
-| C# code model (AST + semantics + formatter) | ✅ Model exists; not wired to decompilation |
+| Stage                                       | State                                                         |
+| ------------------------------------------- | ------------------------------------------------------------- |
+| IL parsing + reification                    | ✅ Working                                                    |
+| Control-flow graph construction             | ⚠️ Prototype                                                  |
+| Stack simulation → C# syntax expressions    | ⚠️ Straight-line prototype (small opcode subset)              |
+| Control-flow reconstruction (`if` / loops)  | ❌ Not started                                                |
+| C# code model (AST + semantics + formatter) | ✅ Model exists; expressions partially wired to decompilation |
 
 ## Repository layout
 
 Everything lives in a single class library, `src/Durchblick`, whose folders mirror the
 decompiler pipeline:
 
-| Path | Namespace | Contents |
-| --- | --- | --- |
-| `src/Durchblick/IL` | `Durchblick.IL` | IL reader, reified instructions and operands |
-| `src/Durchblick/ControlFlow` | `Durchblick.ControlFlow` | Basic blocks and CFG construction |
-| `src/Durchblick/Decompilation` | `Durchblick.Decompilation` | Stack simulation → expressions |
-| `src/Durchblick/Metadata` | `Durchblick.Metadata` | PE/PDB reading spike (unintegrated) |
-| `src/Durchblick/CSharp` | `Durchblick.CSharp.*` | The output model: C# AST, semantic binding, formatting |
-| `src/Durchblick/Collections` | `Durchblick.Collections` | Immutable collection used by the AST |
-| `samples/disassemble` | — | Demo: decompiles a specimen method end to end |
-| `samples/CodeModelDemo` | — | Demo: builds, binds, and formats a C# AST by hand |
-| `specimens/add` | — | Small C# inputs compiled and fed to the decompiler |
-| `tests/Durchblick.Tests` | — | Specimen-driven xUnit tests |
+| Path                           | Namespace                  | Contents                                               |
+| ------------------------------ | -------------------------- | ------------------------------------------------------ |
+| `src/Durchblick/IL`            | `Durchblick.IL`            | IL reader, reified instructions and operands           |
+| `src/Durchblick/ControlFlow`   | `Durchblick.ControlFlow`   | Basic blocks and CFG construction                      |
+| `src/Durchblick/Decompilation` | `Durchblick.Decompilation` | Stack simulation → C# syntax expressions               |
+| `src/Durchblick/Metadata`      | `Durchblick.Metadata`      | PE/PDB reading spike (unintegrated)                    |
+| `src/Durchblick/CSharp`        | `Durchblick.CSharp.*`      | The output model: C# AST, semantic binding, formatting |
+| `src/Durchblick/Collections`   | `Durchblick.Collections`   | Immutable collection used by the AST                   |
+| `samples/disassemble`          | —                          | Demo: decompiles a specimen method end to end          |
+| `samples/CodeModelDemo`        | —                          | Demo: builds, binds, and formats a C# AST by hand      |
+| `specimens/add`                | —                          | Small C# inputs compiled and fed to the decompiler     |
+| `tests/Durchblick.Tests`       | —                          | Specimen-driven xUnit tests                            |
 
 ## Building and running
 
@@ -49,8 +49,8 @@ dotnet run --project samples/disassemble
 dotnet run --project samples/CodeModelDemo
 ```
 
-The disassemble demo compiles `specimens/add`, selects a method, dumps its basic blocks, and
-prints the reconstructed expression.
+The disassemble demo compiles `specimens/add`, selects each method, dumps its basic blocks,
+and prints the expression reconstructed by the straight-line simulator when supported.
 
 ## Documentation
 

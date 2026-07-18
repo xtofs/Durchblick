@@ -7,8 +7,8 @@ using Durchblick.IL;
 /// <summary>
 /// Data-driven tests over specimen methods. Each test is annotated with the specimen's assembly,
 /// type, and method via <see cref="SpecimenAttribute"/> and receives the decoded instruction list
-/// (and, where needed, the resolved <see cref="System.Reflection.MethodInfo"/>). Together they cover the pipeline the
-/// <c>samples/disassemble</c> project runs: decode → basic blocks → expression reconstruction.
+/// (and, where needed, the resolved <see cref="System.Reflection.MethodInfo"/>). Together they cover
+/// decoded IL, basic block partitioning, and CFG edge behavior.
 /// </summary>
 public class DecompilerTests
 {

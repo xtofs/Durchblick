@@ -1,6 +1,6 @@
 ﻿using System.IO;
-using System.Linq.Expressions;
 using System.Reflection;
+using Durchblick.CSharp.Syntax;
 using Durchblick.ControlFlow;
 using Durchblick.Decompilation;
 
@@ -8,8 +8,6 @@ internal class Program
 {
     private static void Main(string[] args)
     {
-
-
         var repoRoot = FindRepoRoot();
         var projectPath = Path.Combine(repoRoot, "specimens", "add", "add.csproj");
         var assembly = Dotnet.CompileAndLoad(projectPath, out var assemblyPath);
@@ -29,19 +27,43 @@ internal class Program
                         Console.WriteLine($"        {instruction}");
                     }
                 }
+
+                try
+                {
+                    var expression = Decompiler.DecompileExpression(cfg, method);
+                    Console.WriteLine($"    expression: {FormatExpression(expression)}");
+                }
+                catch (NotSupportedException ex)
+                {
+                    Console.WriteLine($"    expression: <unsupported: {ex.Message}>");
+                }
             }
         }
-
-
-
-
-        // var map = blocks.ToDictionary(b => b.StartOffset);
-        // Decompiler.GetParametersAndLocals(methodInfo, out var parameters, out var locals);
-
-        // var expr = Decompiler.ToExpression(map, parameters, locals);
-        // Console.WriteLine(expr);
-
     }
+
+    private static string FormatExpression(Expression? expression) => expression switch
+    {
+        null => "<void>",
+        IdentifierExpression identifier => identifier.Name,
+        LiteralExpression literal => literal.Value?.ToString() ?? "null",
+        BinaryExpression binary => $"({FormatExpression(binary.Left)} {FormatBinaryOperator(binary.Operator)} {FormatExpression(binary.Right)})",
+        _ => expression.ToString(),
+    };
+
+    private static string FormatBinaryOperator(BinaryOperator op) => op switch
+    {
+        BinaryOperator.Add => "+",
+        BinaryOperator.Subtract => "-",
+        BinaryOperator.Multiply => "*",
+        BinaryOperator.Divide => "/",
+        BinaryOperator.And => "&",
+        BinaryOperator.Or => "|",
+        BinaryOperator.Equals => "==",
+        BinaryOperator.NotEquals => "!=",
+        BinaryOperator.Less => "<",
+        BinaryOperator.Greater => ">",
+        _ => op.ToString(),
+    };
 
     private static string FindRepoRoot()
     {

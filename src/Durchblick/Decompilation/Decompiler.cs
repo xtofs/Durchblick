@@ -1,251 +1,218 @@
 namespace Durchblick.Decompilation;
 
-using System.Linq.Expressions;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Reflection.Metadata;
-using System.Reflection.Metadata.Ecma335;
+using Durchblick.CSharp.Syntax;
 using Durchblick.ControlFlow;
 using Durchblick.IL;
 
-
 public static class Decompiler
 {
+    public static Expression? DecompileExpression(MethodInfo methodInfo)
+    {
+        var graph = BasicBlockBuilder.Build(methodInfo);
+        return DecompileExpression(graph, methodInfo);
+    }
+
+    public static Expression? DecompileExpression(ControlFlowGraph graph, MethodInfo methodInfo)
+    {
+        var stack = new Stack<Expression>();
+        var arguments = CreateArgumentExpressions(methodInfo);
+        var locals = CreateLocalExpressions(methodInfo);
+        var visitedBlocks = new HashSet<int>();
+        var blockIndex = 0;
+
+        while (true)
+        {
+            if (!visitedBlocks.Add(blockIndex))
+            {
+                throw new NotSupportedException("Loops are not supported by expression decompilation yet.");
+            }
+
+            var block = graph.Blocks[blockIndex];
+            for (var instructionIndex = block.StartIndex; instructionIndex <= block.EndIndex; instructionIndex++)
+            {
+                var instruction = graph.Instructions[instructionIndex];
+                switch (instruction.ILOpCode)
+                {
+                    case ILOpCode.Nop:
+                        break;
+
+                    case ILOpCode.Ldarg_0:
+                        stack.Push(arguments[0]);
+                        break;
+                    case ILOpCode.Ldarg_1:
+                        stack.Push(arguments[1]);
+                        break;
+                    case ILOpCode.Ldarg_2:
+                        stack.Push(arguments[2]);
+                        break;
+                    case ILOpCode.Ldarg_3:
+                        stack.Push(arguments[3]);
+                        break;
+                    case ILOpCode.Ldarg:
+                    case ILOpCode.Ldarg_s:
+                        stack.Push(arguments[instruction.Operand.GetVariableIndex()]);
+                        break;
+
+                    case ILOpCode.Ldloc_0:
+                        stack.Push(locals[0]);
+                        break;
+                    case ILOpCode.Ldloc_1:
+                        stack.Push(locals[1]);
+                        break;
+                    case ILOpCode.Ldloc_2:
+                        stack.Push(locals[2]);
+                        break;
+                    case ILOpCode.Ldloc_3:
+                        stack.Push(locals[3]);
+                        break;
+                    case ILOpCode.Ldloc:
+                    case ILOpCode.Ldloc_s:
+                        stack.Push(locals[instruction.Operand.GetVariableIndex()]);
+                        break;
+
+                    case ILOpCode.Stloc_0:
+                        locals[0] = stack.Pop();
+                        break;
+                    case ILOpCode.Stloc_1:
+                        locals[1] = stack.Pop();
+                        break;
+                    case ILOpCode.Stloc_2:
+                        locals[2] = stack.Pop();
+                        break;
+                    case ILOpCode.Stloc_3:
+                        locals[3] = stack.Pop();
+                        break;
+                    case ILOpCode.Stloc:
+                    case ILOpCode.Stloc_s:
+                        locals[instruction.Operand.GetVariableIndex()] = stack.Pop();
+                        break;
+
+                    case ILOpCode.Ldc_i4_m1:
+                        stack.Push(Expression.Literal(-1, BuiltInTypeReferences.Int));
+                        break;
+                    case ILOpCode.Ldc_i4_0:
+                    case ILOpCode.Ldc_i4_1:
+                    case ILOpCode.Ldc_i4_2:
+                    case ILOpCode.Ldc_i4_3:
+                    case ILOpCode.Ldc_i4_4:
+                    case ILOpCode.Ldc_i4_5:
+                    case ILOpCode.Ldc_i4_6:
+                    case ILOpCode.Ldc_i4_7:
+                    case ILOpCode.Ldc_i4_8:
+                        stack.Push(Expression.Literal((int)instruction.ILOpCode - (int)ILOpCode.Ldc_i4_0, BuiltInTypeReferences.Int));
+                        break;
+                    case ILOpCode.Ldc_i4:
+                    case ILOpCode.Ldc_i4_s:
+                        stack.Push(Expression.Literal(instruction.Operand.GetInt32(), BuiltInTypeReferences.Int));
+                        break;
+                    case ILOpCode.Ldc_i8:
+                        stack.Push(Expression.Literal(instruction.Operand.GetInt64(), BuiltInTypeReferences.Long));
+                        break;
+                    case ILOpCode.Ldc_r4:
+                        stack.Push(Expression.Literal(instruction.Operand.GetFloat32(), BuiltInTypeReferences.Float));
+                        break;
+                    case ILOpCode.Ldc_r8:
+                        stack.Push(Expression.Literal(instruction.Operand.GetFloat64(), BuiltInTypeReferences.Double));
+                        break;
+                    case ILOpCode.Ldnull:
+                        stack.Push(Expression.Literal(null!, Declaration.TypeRef(BuiltInTypeNames.Null)));
+                        break;
+
+                    case ILOpCode.Add:
+                    case ILOpCode.Sub:
+                    case ILOpCode.Mul:
+                    case ILOpCode.Div:
+                    case ILOpCode.Ceq:
+                    case ILOpCode.Cgt:
+                    case ILOpCode.Clt:
+                        PushBinaryExpression(stack, BinaryOperators[instruction.ILOpCode]);
+                        break;
+
+                    case ILOpCode.Br:
+                    case ILOpCode.Br_s:
+                        blockIndex = SingleSuccessor(block, instruction);
+                        goto NextBlock;
+
+                    case ILOpCode.Ret:
+                        return stack.Count == 0 ? null : stack.Pop();
+
+                    default:
+                        throw Unsupported(instruction);
+                }
+            }
+
+            if (block.Successors.Count != 1)
+            {
+                throw new NotSupportedException($"Expression decompilation requires straight-line control flow at block {blockIndex}.");
+            }
+
+            blockIndex = block.Successors[0];
+
+        NextBlock:
+            continue;
+        }
+    }
+
+    private static readonly Dictionary<ILOpCode, BinaryOperator> BinaryOperators = new()
+    {
+        [ILOpCode.Add] = BinaryOperator.Add,
+        [ILOpCode.Sub] = BinaryOperator.Subtract,
+        [ILOpCode.Mul] = BinaryOperator.Multiply,
+        [ILOpCode.Div] = BinaryOperator.Divide,
+        [ILOpCode.Ceq] = BinaryOperator.Equals,
+        [ILOpCode.Cgt] = BinaryOperator.Greater,
+        [ILOpCode.Clt] = BinaryOperator.Less,
+    };
+
+    private static Expression[] CreateArgumentExpressions(MethodInfo methodInfo)
+    {
+        var parameters = methodInfo.GetParameters();
+        var arguments = new List<Expression>();
+
+        if (!methodInfo.IsStatic)
+        {
+            arguments.Add(Expression.Identifier("this", new SymbolReference("this", SymbolKind.Parameter)));
+        }
+
+        arguments.AddRange(parameters.Select(parameter =>
+        {
+            var name = parameter.Name ?? $"arg{parameter.Position}";
+            return Expression.Identifier(name, new SymbolReference(name, SymbolKind.Parameter));
+        }));
+
+        return [.. arguments];
+    }
+
+    private static Expression[] CreateLocalExpressions(MethodInfo methodInfo)
+    {
+        var body = methodInfo.GetMethodBody();
+        if (body is null)
+        {
+            return [];
+        }
+
+        return [.. body.LocalVariables.Select(local =>
+        {
+            var name = $"local{local.LocalIndex}";
+            return Expression.Identifier(name, new SymbolReference(name, SymbolKind.Local));
+        })];
+    }
+
+    private static void PushBinaryExpression(Stack<Expression> stack, BinaryOperator op)
+    {
+        var right = stack.Pop();
+        var left = stack.Pop();
+        stack.Push(Expression.Binary(op, left, right));
+    }
+
+    private static int SingleSuccessor(BasicBlock block, Instruction instruction) =>
+        block.Successors.Count == 1
+            ? block.Successors[0]
+            : throw new NotSupportedException($"Branch at IL_{instruction.Offset:X4} does not have exactly one successor in the control flow graph.");
+
+    private static NotSupportedException Unsupported(Instruction instruction) =>
+        new($"Unsupported IL opcode for expression decompilation at IL_{instruction.Offset:X4}: {instruction.OpCode}.");
 }
-
-//     public static void RunBlockLeaders(Expression[] locals, Expression[] arguments, Stack<Expression> stack, BasicBlock block)
-// {
-
-//     //   - Stores: `starg`, `stloc.2/3`, `stloc.s`, `stloc`.
-//     //   - Arithmetic/logic: `sub` (see A7), `rem`, `neg`, `and`, `or`, `xor`, `shl`, `shr`, `not`, `.ovf`.
-//     //   - Comparisons: `ceq`, `clt` (see A7), `cgt.un`, `clt.un`.
-
-
-//     foreach (var instruction in block.Instructions)
-//     {
-//         var opcode = instruction.OpCode;
-//         var ilOpCode = opcode.ILOpCode;
-
-//         // The block's terminator (branch, conditional branch, return, or throw) is decoded by
-//         // the caller (ToExpression); the body simulator stops as soon as it reaches it.
-//         if (Terminators.Contains(opcode.FlowControl))
-//         {
-//             return;
-//         }
-
-//         // switch on ILOpCode which is a single enum instead of the structured OpCode type
-//         switch (ilOpCode)
-//         {
-//             case ILOpCode.Nop:
-//                 break;
-
-//             #region loads
-
-//             case ILOpCode.Ldarg_0:
-//                 stack.Push(arguments[0]);
-//                 break;
-//             case ILOpCode.Ldarg_1:
-//                 stack.Push(arguments[1]);
-//                 break;
-//             case ILOpCode.Ldarg_2:
-//                 stack.Push(arguments[2]);
-//                 break;
-//             case ILOpCode.Ldarg_3:
-//                 stack.Push(arguments[3]);
-//                 break;
-//             case ILOpCode.Ldarg_s:
-//                 stack.Push(arguments[instruction.Operand.GetVariableIndex()]);
-//                 break;
-
-//             case ILOpCode.Ldarg:
-//                 stack.Push(arguments[instruction.Operand.GetVariableIndex()]);
-//                 break;
-
-//             case ILOpCode.Ldloc_0:
-//                 stack.Push(locals[0]);
-//                 break;
-//             case ILOpCode.Ldloc_1:
-//                 stack.Push(locals[1]);
-//                 break;
-//             case ILOpCode.Ldloc_2:
-//                 stack.Push(locals[2]);
-//                 break;
-//             case ILOpCode.Ldloc_3:
-//                 stack.Push(locals[3]);
-//                 break;
-//             case ILOpCode.Ldloc_s:
-//             case ILOpCode.Ldloc:
-//                 stack.Push(locals[instruction.Operand.GetVariableIndex()]);
-//                 break;
-
-//             case ILOpCode.Ldc_i4_0:
-//                 stack.Push(Expression.Constant(0));
-//                 break;
-//             case ILOpCode.Ldc_i4_1:
-//                 stack.Push(Expression.Constant(1));
-//                 break;
-//             case ILOpCode.Ldc_i4_2:
-//                 stack.Push(Expression.Constant(2));
-//                 break;
-//             case ILOpCode.Ldc_i4_3:
-//                 stack.Push(Expression.Constant(3));
-//                 break;
-//             case ILOpCode.Ldc_i4_4:
-//                 stack.Push(Expression.Constant(4));
-//                 break;
-//             case ILOpCode.Ldc_i4_5:
-//                 stack.Push(Expression.Constant(5));
-//                 break;
-//             case ILOpCode.Ldc_i4_6:
-//                 stack.Push(Expression.Constant(6));
-//                 break;
-//             case ILOpCode.Ldc_i4_7:
-//                 stack.Push(Expression.Constant(7));
-//                 break;
-//             case ILOpCode.Ldc_i4_8:
-//                 stack.Push(Expression.Constant(8));
-//                 break;
-//             case ILOpCode.Ldc_i4:
-//             case ILOpCode.Ldc_i4_s:
-//                 stack.Push(Expression.Constant(instruction.Operand.GetInt32()));
-//                 break;
-//             case ILOpCode.Ldc_i8:
-//                 stack.Push(Expression.Constant(instruction.Operand.GetInt64()));
-//                 break;
-//             case ILOpCode.Ldc_i4_m1:
-//                 stack.Push(Expression.Constant(-1));
-//                 break;
-//             case ILOpCode.Ldc_r4:
-//                 stack.Push(Expression.Constant(Expression.Constant(instruction.Operand.GetFloat32())));
-//                 break;
-//             case ILOpCode.Ldc_r8:
-//                 stack.Push(Expression.Constant(Expression.Constant(instruction.Operand.GetFloat64())));
-//                 break;
-//             case ILOpCode.Ldstr:
-//                 // var token = instruction.Operand.GetMetaDataToken();
-//                 // var reader = peReader.GetMetadataReader();
-//                 // var handle = (UserStringHandle)MetadataTokens.Handle(token);
-//                 // string value = reader.GetUserString(handle);
-//                 // stack.Push(Expression.Constant(value));
-//                 break;
-//             case ILOpCode.Ldnull:
-//                 stack.Push(Expression.Constant(null));
-//                 break;
-//             //  `ldarga`/`ldloca`.
-//             #endregion
-
-//             case ILOpCode.Stloc_0:
-//                 locals[0] = stack.Pop();
-//                 break;
-//             case ILOpCode.Stloc_1:
-//                 locals[1] = stack.Pop();
-//                 break;
-
-//             case ILOpCode.Add:
-//             case ILOpCode.Mul:
-//             case ILOpCode.Div:
-//             case ILOpCode.Cgt:
-//                 var op = BinaryOperators[ilOpCode];
-//                 var right = stack.Pop();
-//                 var left = stack.Pop();
-//                 stack.Push(op(left, right));
-//                 break;
-
-//             default:
-//                 throw new NotSupportedException($"Unsupported IL opcode: {instruction.OpCode.ILOpCode}");
-//         }
-//     }
-// }
-
-// static readonly Dictionary<ILOpCode, Func<Expression, Expression, Expression>> BinaryOperators = new()
-//     {
-//         { ILOpCode.Add, Expression.Add },
-//         { ILOpCode.Mul, Expression.Multiply },
-//         { ILOpCode.Div, Expression.Divide },
-//         { ILOpCode.Sub, Expression.Subtract },
-
-//         { ILOpCode.Ceq, Expression.Equal },
-//         { ILOpCode.Cgt, Expression.GreaterThan },
-//         { ILOpCode.Clt, Expression.LessThan },
-//     };
-
-// // Flow-control kinds that end a basic block; RunBlockLeaders stops the body simulation here
-// // and lets ToExpression decode the terminator.
-// private static readonly HashSet<FlowControl> Terminators =
-//     [FlowControl.Branch, FlowControl.Cond_Branch, FlowControl.Return, FlowControl.Throw];
-
-// public static void GetParametersAndLocals(MethodInfo methodInfo, out ParameterExpression[] parameters, out Expression[] locals)
-// {
-//     parameters = [.. methodInfo.GetParameters().Select(p => Expression.Parameter(p.ParameterType, p.Name))];
-//     if (!methodInfo.IsStatic)
-//     {
-//         var @this = Expression.Parameter(methodInfo.DeclaringType!, "this");
-//         parameters = [@this, .. parameters];
-//     }
-
-//     var mb = methodInfo.GetMethodBody()!;
-//     locals = [.. mb.LocalVariables.Select(v => Expression.Variable(v.LocalType, v.ToString()))];
-// }
-
-
-// public static Expression? ToExpression(Dictionary<int, BasicBlock> blocks, Expression[] parameters, Expression[] locals)
-// {
-//     return Eval(blocks[0], new Stack<Expression>());
-
-//     Expression? Eval(BasicBlock block, Stack<Expression> stack)
-//     {
-//         throw new NotImplementedException();
-
-//         RunBlockLeaders(locals, parameters, stack, block);
-
-//         // var exit = block.Exit;
-//         // switch (exit.OpCode.ILOpCode)
-//         // {
-//         //     case ILOpCode.Ret:
-//         //         return stack.Count > 0 ? stack.Pop() : null;
-
-//         //     case ILOpCode.Br:
-//         //     case ILOpCode.Br_s:
-//         //         return Eval(blocks[exit.Operand.GetBranchTarget()], stack);
-
-//         //     // brfalse jumps to its target when the value is zero/false and falls through
-//         //     // otherwise; brtrue is the mirror image. Both reconstruct to a ternary.
-//         //     case ILOpCode.Brfalse:
-//         //     case ILOpCode.Brfalse_s:
-//         //         return Conditional(stack, whenTrue: FallThrough(block), whenFalse: exit.Operand.GetBranchTarget());
-
-//         //     case ILOpCode.Brtrue:
-//         //     case ILOpCode.Brtrue_s:
-//         //         return Conditional(stack, whenTrue: exit.Operand.GetBranchTarget(), whenFalse: FallThrough(block));
-
-//         //     default:
-//         //         throw new NotSupportedException($"Unsupported terminator opcode: {exit.OpCode.ILOpCode}");
-//         // }
-//     }
-
-//     Expression? Conditional(Stack<Expression> stack, int whenTrue, int whenFalse)
-//     {
-//         var condition = AsBoolean(stack.Pop());
-//         var ifTrue = Eval(blocks[whenTrue], Clone(stack));
-//         var ifFalse = Eval(blocks[whenFalse], Clone(stack));
-//         return ifTrue is null || ifFalse is null
-//             ? null
-//             : Expression.Condition(condition, ifTrue, ifFalse);
-//     }
-
-//     // The fall-through of a conditional branch is the block that begins immediately after it.
-//     // Blocks tile the IL contiguously, so that is the next block by start offset.
-//     int FallThrough(BasicBlock block)
-//     {
-//         var next = blocks.Keys.Where(offset => offset > block.StartOffset).ToList();
-//         return next.Count > 0
-//             ? next.Min()
-//             : throw new InvalidOperationException($"No fall-through block after IL_{block.StartOffset:X4}.");
-//     }
-
-//     static Expression AsBoolean(Expression condition) =>
-//         condition.Type == typeof(bool) ? condition : Expression.NotEqual(condition, Expression.Constant(0));
-
-//     static Stack<Expression> Clone(Stack<Expression> stack) => new(stack.Reverse());
-// }
-// }

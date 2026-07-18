@@ -5,9 +5,9 @@ using Durchblick.IL;
 using Xunit.Sdk;
 
 /// <summary>
-/// Data attribute that decompiles a specimen method and feeds it to a <c>[Theory]</c>. Annotate a
-/// test with the specimen's assembly, type, and method name; the test receives inputs decoded from
-/// that method, matched to its parameters by type:
+/// Data attribute that resolves a specimen method and feeds decoded inputs to a <c>[Theory]</c>.
+/// Annotate a test with the specimen's assembly, type, and method name; the test receives inputs
+/// decoded from that method, matched to its parameters by type:
 /// <list type="bullet">
 /// <item><see cref="IReadOnlyList{Instruction}"/> (or <c>Instruction[]</c>) — the decoded instruction list.</item>
 /// <item><see cref="MethodInfo"/> / <see cref="MethodBase"/> — the resolved specimen method (for parameters and locals).</item>
