@@ -47,4 +47,38 @@ public class DecompilerTests
             Assert.Equal(expected, block.Successors.Count);
         });
     }
+
+    [Fact]
+    public void Conditional_branch_preserves_duplicate_successor_edges()
+    {
+        Instruction[] instructions =
+        [
+            new(0, OpCodes.Ldc_I4_0, Operand.None),
+            new(1, OpCodes.Brfalse_S, Operand.ForBranchTarget(2, OperandType.ShortInlineBrTarget)),
+            new(2, OpCodes.Ret, Operand.None),
+        ];
+
+        var blocks = BasicBlockBuilder.Build(instructions);
+
+        Assert.Equal([1, 1], blocks[0].Successors);
+    }
+
+    [Fact]
+    public void Switch_successors_follow_case_order_then_fallthrough()
+    {
+        Instruction[] instructions =
+        [
+            new(0, OpCodes.Ldc_I4_0, Operand.None),
+            new(1, OpCodes.Switch, new Operand([6, 4])),
+            new(2, OpCodes.Ret, Operand.None),
+            new(4, OpCodes.Ret, Operand.None),
+            new(6, OpCodes.Ret, Operand.None),
+        ];
+
+        var blocks = BasicBlockBuilder.Build(instructions);
+        var successorOffsets = blocks[0].Successors
+            .Select(successor => instructions[blocks[successor].StartIndex].Offset);
+
+        Assert.Equal([6, 4, 2], successorOffsets);
+    }
 }
