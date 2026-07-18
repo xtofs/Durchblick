@@ -12,13 +12,16 @@ background, and the full gap analysis and phased plan.
 
 ## Status
 
-| Stage                                       | State                                                         |
-| ------------------------------------------- | ------------------------------------------------------------- |
-| IL parsing + reification                    | ✅ Working                                                    |
-| Control-flow graph construction             | ⚠️ Prototype                                                  |
-| Stack simulation → C# syntax expressions    | ⚠️ Straight-line prototype (small opcode subset)              |
-| Control-flow reconstruction (`if` / loops)  | ❌ Not started                                                |
-| C# code model (AST + semantics + formatter) | ✅ Model exists; expressions partially wired to decompilation |
+| Stage                                 | State                                                      |
+| ------------------------------------- | ---------------------------------------------------------- |
+| IL parsing + reification              | ✅ Solid, near-complete                                    |
+| Control-flow graph construction       | ⚠️ Prototype; leaders and successor edges are covered      |
+| Stack simulation → syntax expression  | ⚠️ Straight-line prototype for a small opcode subset       |
+| Structured method-body reconstruction | ❌ Not started (`if`/loops/switch/statements)              |
+| C# syntax model + formatter           | ✅ Model exists; formatter is basic                        |
+| Semantic binding                      | ⚠️ Exists; role in decompilation is not defined yet        |
+| Metadata / PDB symbols                | ⚠️ Spike exists; not integrated into the main pipeline     |
+| Tests                                 | ⚠️ Specimen harness covers CFG edges and expression slices |
 
 ## Repository layout
 
