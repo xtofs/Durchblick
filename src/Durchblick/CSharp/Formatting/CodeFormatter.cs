@@ -38,10 +38,8 @@ public partial class CodeFormatter(TextWriter textWriter)
             TypeKind.Enum => "enum",
             _ => throw new NotImplementedException($"Unknown type kind: {type.Kind}")
         };
-        var parameterList = type.TypeParameters.Count > 0
-            ? $"<{string.Join(", ", type.TypeParameters.Select(tp => tp.Name))}>"
-            : string.Empty;
-        writer.WriteLine($"{keyword} {type.Name}{parameterList}");
+        var typeParameterList = type.TypeParameters.FormatAsList("<", ", ", ">", false);
+        writer.WriteLine($"{keyword} {type.Name}{typeParameterList}");
         using (writer.WithIndentation("{", "}"))
         {
             if (type.Kind == TypeKind.Enum)
@@ -70,7 +68,7 @@ public partial class CodeFormatter(TextWriter textWriter)
     private void FormatMember(MemberDecl member, bool isInitial, bool isFinal)
     {
         if (!isInitial) { writer.WriteLine(); }
-        var mods = member.Modifiers.Count > 0 ? string.Join(" ", member.Modifiers.Select(m => $"{m.Keyword}")) + " " : string.Empty;
+        var mods = member.Modifiers.FormatAsList("", " ", " "); // separated by space and additional space if not empty
         writer.Write($"{mods}{member.TypeReference.Name} {member.Name} ");
         switch (member.Kind)
         {

@@ -45,6 +45,9 @@ public abstract record Expression : AstNode
 
     public static AwaitExpression Await(Expression expr)
         => new(expr);
+
+    public static AssignExpression Assign(Expression target, Expression value)
+        => new(target, value);
 }
 
 public sealed record LiteralExpression(object Value, TypeReference Type) : Expression;
@@ -61,3 +64,6 @@ public sealed record TupleExpression(ImmutableCollection<Expression> Elements) :
 public sealed record CastExpression(TypeReference Type, Expression Expression) : Expression;
 public sealed record AwaitExpression(Expression Expression) : Expression;
 public sealed record Parameter(string Name, TypeReference Type) : Expression;
+
+/// <summary>A general assignment <c>Target = Value</c> (distinct from the object-initializer-only <see cref="AssignmentExpression"/>).</summary>
+public sealed record AssignExpression(Expression Target, Expression Value) : Expression;

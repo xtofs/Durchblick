@@ -7,7 +7,7 @@ using Durchblick.Decompilation;
 public class DecompilerExpressionTests
 {
     [Theory]
-    [Specimen("add", "specimen.Class1", "Calculate")]
+    [Specimen("specimen.Class1", "Calculate1")]
     public void Decompiles_simple_return_expression(MethodInfo methodInfo)
     {
         var expression = Decompiler.DecompileExpression(methodInfo);
@@ -19,7 +19,7 @@ public class DecompilerExpressionTests
     }
 
     [Theory]
-    [Specimen("add", "specimen.Class1", "Calculate2")]
+    [Specimen("specimen.Class1", "Calculate2")]
     public void Decompiles_return_expression_through_locals(MethodInfo methodInfo)
     {
         var expression = Decompiler.DecompileExpression(methodInfo);
@@ -38,7 +38,7 @@ public class DecompilerExpressionTests
     }
 
     [Theory]
-    [Specimen("add", "specimen.Class1", "Calculate3")]
+    [Specimen("specimen.Class1", "Calculate3")]
     public void Rejects_branching_control_flow_for_expression_decompilation(MethodInfo methodInfo)
     {
         Assert.Throws<NotSupportedException>(() => Decompiler.DecompileExpression(methodInfo));

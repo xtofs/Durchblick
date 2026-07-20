@@ -13,6 +13,7 @@
         "Pushi",
         "Pushr",
         "Pushref",
-        "Stloc"
+        "Stloc",
+        "Structurer"
     ]
 }

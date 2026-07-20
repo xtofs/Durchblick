@@ -15,6 +15,16 @@ public static class Decompiler
         return DecompileExpression(graph, methodInfo);
     }
 
+    /// <summary>
+    /// Reconstructs a structured method body (statements, with <c>if</c>/loops recovered from the
+    /// CFG) as a <see cref="BlockStatement"/>.
+    /// </summary>
+    public static BlockStatement DecompileBody(MethodInfo methodInfo)
+    {
+        var graph = BasicBlockBuilder.Build(methodInfo);
+        return Structurer.Structure(graph, methodInfo);
+    }
+
     public static Expression? DecompileExpression(ControlFlowGraph graph, MethodInfo methodInfo)
     {
         var stack = new Stack<Expression>();
@@ -156,7 +166,7 @@ public static class Decompiler
         }
     }
 
-    private static readonly Dictionary<ILOpCode, BinaryOperator> BinaryOperators = new()
+    internal static readonly Dictionary<ILOpCode, BinaryOperator> BinaryOperators = new()
     {
         [ILOpCode.Add] = BinaryOperator.Add,
         [ILOpCode.Sub] = BinaryOperator.Subtract,
@@ -167,7 +177,7 @@ public static class Decompiler
         [ILOpCode.Clt] = BinaryOperator.Less,
     };
 
-    private static Expression[] CreateArgumentExpressions(MethodInfo methodInfo)
+    internal static Expression[] CreateArgumentExpressions(MethodInfo methodInfo)
     {
         var parameters = methodInfo.GetParameters();
         var arguments = new List<Expression>();
@@ -186,7 +196,7 @@ public static class Decompiler
         return [.. arguments];
     }
 
-    private static Expression[] CreateLocalExpressions(MethodInfo methodInfo)
+    internal static Expression[] CreateLocalExpressions(MethodInfo methodInfo)
     {
         var body = methodInfo.GetMethodBody();
         if (body is null)

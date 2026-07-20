@@ -273,6 +273,20 @@ branch normalization, clean reification layer. **Build on it; don't touch it.**
 
 Ordered by dependency. Each phase is independently verifiable.
 
+> **Current focus — complete control-flow reconstruction (Phase 3).** The goal is a working
+> structuring pass that turns the CFG + stack simulation into C# **statements** (`if`/`else`,
+> `while`/`do`, `switch`, sequences, early returns), emitted as `Durchblick.CSharp.Syntax`
+> nodes and rendered by the existing `CodeFormatter`. Everything else is deliberately deferred
+> until this lands:
+>
+> - **No compiler-lowering pattern recognition** (`foreach`/`using`/`async`/iterators/switch
+>   expressions/pattern matching) — that is Phase 5.
+> - **No pretty-printer investment beyond the current `CodeFormatter`** (Phase 6). Only add
+>   formatting for genuinely new nodes we are forced to introduce.
+> - **No additional metadata/PDB reading unless unavoidable** (Phase 4). Locals stay `localN`,
+>   parameters come from reflection, and the pipeline does **not** move to `MetadataReader` yet.
+> - Exception regions (C4) stay out — they are only needed for `try`/`catch`, which is Phase 5.
+
 **Phase 0 — Foundations & decisions** _(unblocks everything)_
 
 - [x] Test project with specimen harness (`tests/Durchblick.Tests`, `[Specimen]` attribute).
@@ -294,28 +308,79 @@ Ordered by dependency. Each phase is independently verifiable.
 - [ ] Add `call`/`newobj`/field/`dup`/`pop`/`conv` handling.
 - [ ] Per-opcode simulator tests.
 
-**Phase 3 — Control-flow reconstruction** _(C2 — the core)_
+**Phase 3 — Control-flow reconstruction** _(C2 — the current milestone)_
 
-- [ ] Dominator tree + natural-loop detection over the CFG.
-- [ ] Structurer: `if/else` from conditional diamonds, `while`/`do` from back edges,
-      sequences, multiple returns — emitting `Durchblick.CSharp.Syntax` statements (C1).
-- [ ] Add `ToBody`/`ToStatements` for structured method-body reconstruction.
-- [ ] Golden tests: `Calculate3` → real `if`; a loop specimen → `while`.
+**Status: complete.** 3a (dominators/post-dominators/loops, `Dominance.cs` + `Loops.cs`) ✅;
+3b (statement-producing block simulation) ✅; 3c `if`/`else` (`Calculate3`) ✅, `while`
+(`Calculate4`, canonical `while(true){ …; if(!cond) break; … }` for debug loops) ✅, and `switch`
+(`Calculate5`, jump table → `SwitchStatement` with constant cases + `default`) ✅; 3d
+(`AssignExpression`, plus a `DiscardPattern` for `default`) ✅. `Decompiler.DecompileBody` is the
+entry point; golden tests in `DecompilerBodyTests.cs`. Output still carries the compiler's debug
+temps (temp-inlining is a deferred simplification pass) and is verified on AST shape (no body text
+formatter yet — Phase 6).
 
-**Phase 4 — Metadata & symbols** _(C3, C5, C4-read)_
+Target: `Calculate3` → a real `if`; a new loop specimen → a `while`; a new compiled `switch`
+specimen → a `SwitchStatement`. All output goes into existing `Durchblick.CSharp.Syntax`
+statement nodes (`IfStatement`, `WhileStatement`, `SwitchStatement`, `ReturnStatement`,
+`BlockStatement`, `Break`/`Continue`, and `ConditionalExpression` for folded diamonds).
 
-- [ ] Integrate `Durchblick.Metadata`: PDB local + parameter names into the AST; PDB optional.
-- [ ] Read exception regions (data model only here; structuring in Phase 5).
+3a. **CFG analyses** — new pure builders in `Durchblick.ControlFlow`, over the existing
+index-based `ControlFlowGraph` (data/builder split, like `BasicBlockBuilder`):
 
-**Phase 5 — Exception handling & compiler patterns** _(C4, background §4–5)_
+- [ ] Dominator tree (iterative Cooper–Harvey–Kennedy; small methods, no need for
+      Lengauer–Tarjan).
+- [ ] Post-dominator tree (same algorithm on the reversed CFG with a unified virtual exit) —
+      gives the join node of a two-way branch.
+- [ ] Back-edge / natural-loop detection (edge `u→v` where `v` dominates `u`).
+- [ ] Unit tests on hand-built CFGs, mirroring the existing `BasicBlockBuilder` tests.
 
-- [ ] try/catch/finally structuring; then `using`, `foreach`, `switch` tables, pattern
-      matching; async/iterator state machines last (long tail).
+3b. **Statement-producing simulation** — extend `Decompiler` to simulate a block into (a) a
+list of `Statement`s and (b) its symbolic exit-stack, instead of one accumulated expression:
 
-**Phase 6 — Pretty-printer** _(C6)_
+- [ ] Assume the IL stack is empty at block boundaries except the single value feeding the
+      terminator (the branch condition, or the return value) — the shape Roslyn emits for
+      these constructs. Document as a known limitation.
+- [ ] Consume conditional branches: add `brtrue`/`brfalse` (the Debug specimens compile
+      `a > 3` to `cgt; … brfalse`); add the fused compare-and-branch opcodes
+      (`beq`/`bne.un`/`bgt`/`bge`/`blt`/`ble`(`.un`)) as a follow-up for optimized IL.
+- [ ] Emit `ReturnStatement` for `ret`-with-value.
 
-- [ ] `CodeFormatter` → idiomatic C# with correct operator precedence and minimal
-      parentheses.
+3c. **Structurer** — new in `Durchblick.Decompilation`; recursive descent over the dominator
+tree using the post-dominator as each region's follow/join node:
+
+- [ ] Two-way branch whose post-dominator is the join → `IfStatement` (then/else = the two
+      regions, continue at the join). A reconverging single-value diamond may instead fold to a
+      `ConditionalExpression` when both arms are returns (covers `Calculate3` cleanly).
+- [ ] Back edge → `WhileStatement`/do-loop, with `break`/`continue` for non-latch loop exits.
+- [ ] `switch` terminator → `SwitchStatement` from the ordered successor edges.
+- [ ] Otherwise sequence blocks in dominator order → `BlockStatement`.
+- [ ] Public entry `Decompiler.DecompileBody(MethodInfo) : BlockStatement`.
+
+3d. **Minimal required syntax addition** — the _only_ code-model change in scope. There is no
+general assignment node today (`AssignmentExpression` in `Auxilary.cs` models object-initializer
+members only). Add a general assignment (e.g. `AssignExpression(Expression Target, Expression
+Value) : Expression`) plus one `CodeFormatter` case, so stores that cannot be inlined (loop
+induction variables, values live across a merge) render as `x = …;`. Reuse `CodeFormatter` for
+`if`/`while`/`return`/`block` as-is (already exercised by `samples/CodeModel`); verify coverage,
+do not rewrite it.
+
+- [ ] Golden tests: `Calculate3` → `if`/ternary; loop specimen → `while`; switch specimen →
+      `SwitchStatement`. Eyeball end-to-end via `dotnet run --project samples/disassemble`.
+
+---
+
+**Deferred until the Phase 3 milestone is complete** (kept here so scope stays honest):
+
+- **Phase 4 — Metadata & symbols** _(C3, C5, C4-read)_ — integrate `Durchblick.Metadata` for
+  PDB local/parameter names; converge the pipeline on `MetadataReader`; read exception regions.
+- **Phase 5 — Exception handling & compiler patterns** _(C4, background §4–5)_ —
+  try/catch/finally; then `using`, `foreach`, `switch` expressions, pattern matching;
+  async/iterator state machines last.
+- **Phase 6 — Pretty-printer** _(C6)_ — `CodeFormatter` → idiomatic C# with precedence-aware
+  minimal parenthesization.
+
+Broader straight-line opcode coverage (Phase 2 / B1: `call`/`newobj`/field/`conv`/…) continues
+opportunistically but is not on the critical path for the arithmetic/branch specimens above.
 
 ### Verification
 

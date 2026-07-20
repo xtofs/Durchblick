@@ -13,7 +13,7 @@ using Durchblick.IL;
 public class DecompilerTests
 {
     [Theory]
-    [Specimen("add", "specimen.Class1", "Calculate3")]
+    [Specimen("specimen.Class1", "Calculate3")]
     public void Splits_into_basic_blocks(IReadOnlyList<Instruction> instructions)
     {
         var blocks = BasicBlockBuilder.Build(instructions);
@@ -27,9 +27,9 @@ public class DecompilerTests
     }
 
     [Theory]
-    [Specimen("add", "specimen.Class1", "Calculate")]
-    [Specimen("add", "specimen.Class1", "Calculate2")]
-    [Specimen("add", "specimen.Class1", "Calculate3")]
+    [Specimen("specimen.Class1", "Calculate1")]
+    [Specimen("specimen.Class1", "Calculate2")]
+    [Specimen("specimen.Class1", "Calculate3")]
     public void Successor_count_matches_the_exit_instruction(IReadOnlyList<Instruction> instructions)
     {
         var blocks = BasicBlockBuilder.Build(instructions);

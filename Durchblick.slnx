@@ -5,9 +5,6 @@
         <Project Path="samples/disassemble/disassemble.csproj" />
         <Project Path="samples/OpCodeTable/OpCodeTable.csproj" />
     </Folder>
-    <Folder Name="/specimens/">
-        <Project Path="specimens/add/add.csproj" />
-    </Folder>
     <Folder Name="/src/">
         <Project Path="src/Durchblick/Durchblick.csproj" />
     </Folder>

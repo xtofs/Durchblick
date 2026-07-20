@@ -1,4 +1,6 @@
-﻿namespace specimen;
+// Specimen inputs compiled into the disassemble demo. The demo reflects over the `specimen`
+// namespace of its own assembly, so it disassembles its own IL with no external project dependency.
+namespace specimen;
 
 public class Class1
 {
@@ -12,6 +14,7 @@ public class Class1
         var c = a + b;
         return c * 2;
     }
+
     public int Calculate3(int a, int b)
     {
 
@@ -30,5 +33,17 @@ public class Class1
             accu += a;
         }
         return accu;
+    }
+
+    public int Calculate5(int a)
+    {
+        switch (a)
+        {
+            case 0: return 10;
+            case 1: return 11;
+            case 2: return 12;
+            case 3: return 13;
+            default: return -1;
+        }
     }
 }

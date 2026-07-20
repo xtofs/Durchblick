@@ -32,14 +32,16 @@ decompiler pipeline:
 | ------------------------------ | -------------------------- | ------------------------------------------------------ |
 | `src/Durchblick/IL`            | `Durchblick.IL`            | IL reader, reified instructions and operands           |
 | `src/Durchblick/ControlFlow`   | `Durchblick.ControlFlow`   | Basic blocks and CFG construction                      |
-| `src/Durchblick/Decompilation` | `Durchblick.Decompilation` | Stack simulation → C# syntax expressions               |
+| `src/Durchblick/Decompilation` | `Durchblick.Decompilation` | Stack simulation + control-flow reconstruction         |
 | `src/Durchblick/Metadata`      | `Durchblick.Metadata`      | PE/PDB reading spike (unintegrated)                    |
 | `src/Durchblick/CSharp`        | `Durchblick.CSharp.*`      | The output model: C# AST, semantic binding, formatting |
 | `src/Durchblick/Collections`   | `Durchblick.Collections`   | Immutable collection used by the AST                   |
-| `samples/disassemble`          | —                          | Demo: decompiles a specimen method end to end          |
+| `samples/disassemble`          | —                          | Demo: disassembles its own `specimen` namespace        |
 | `samples/CodeModelDemo`        | —                          | Demo: builds, binds, and formats a C# AST by hand      |
-| `specimens/add`                | —                          | Small C# inputs compiled and fed to the decompiler     |
-| `tests/Durchblick.Tests`       | —                          | Specimen-driven xUnit tests                            |
+| `tests/Durchblick.Tests`       | —                          | Specimen-driven xUnit tests (specimens compiled in)    |
+
+Specimen inputs are compiled directly into the test and disassemble projects (see their
+`Specimens.cs`), so each reflects over its own assembly with no separate specimen project.
 
 ## Building and running
 
@@ -52,8 +54,8 @@ dotnet run --project samples/disassemble
 dotnet run --project samples/CodeModelDemo
 ```
 
-The disassemble demo compiles `specimens/add`, selects each method, dumps its basic blocks,
-and prints the expression reconstructed by the straight-line simulator when supported.
+The disassemble demo reflects over the specimen methods in its own `specimen` namespace, dumps
+each method's basic blocks and CFG edges, and prints the per-block stack simulation when supported.
 
 ## Documentation
 

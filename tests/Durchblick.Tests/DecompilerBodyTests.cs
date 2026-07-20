@@ -1,0 +1,68 @@
+namespace Durchblick.Tests;
+
+using System.Reflection;
+using Durchblick.CSharp.Syntax;
+using Durchblick.Decompilation;
+
+/// <summary>
+/// Golden tests for structured method-body reconstruction (control-flow recovery): a two-way
+/// branch becomes an <see cref="IfStatement"/>, a natural loop becomes a <see cref="WhileStatement"/>.
+/// Assertions are on the reconstructed AST shape (there is no C# text formatter for bodies yet).
+/// </summary>
+public class DecompilerBodyTests
+{
+    [Theory]
+    [Specimen("specimen.Class1", "Calculate3")]
+    public void Reconstructs_if_from_conditional_branch(MethodInfo method)
+    {
+        var body = Decompiler.DecompileBody(method);
+
+        var ifStatement = body.Statements.OfType<IfStatement>().Single();
+        Assert.NotNull(ifStatement.Else); // `if (…) { … } else { … }`
+
+        // Each arm assigns the result temp; the method then returns it.
+        Assert.IsType<BlockStatement>(ifStatement.Then);
+        Assert.IsType<BlockStatement>(ifStatement.Else);
+        Assert.Contains(body.Statements, statement => statement is ReturnStatement);
+    }
+
+    [Theory]
+    [Specimen("specimen.Class1", "Calculate4")]
+    public void Reconstructs_while_from_loop(MethodInfo method)
+    {
+        var body = Decompiler.DecompileBody(method);
+
+        var whileStatement = body.Statements.OfType<WhileStatement>().Single();
+
+        // The debug `for` loop stores its comparison to a temp in the header, so the loop is
+        // recovered in canonical form: `while (true) { …; if (!cond) break; … }`.
+        var loopBody = Assert.IsType<BlockStatement>(whileStatement.Body);
+        var exitGuard = loopBody.Statements.OfType<IfStatement>().First();
+        Assert.Equal(UnaryOperator.Not, Assert.IsType<UnaryExpression>(exitGuard.Condition).Operator);
+        var guardThen = Assert.IsType<BlockStatement>(exitGuard.Then);
+        Assert.Contains(guardThen.Statements, statement => statement is BreakStatement);
+
+        // The method returns after the loop.
+        Assert.Contains(body.Statements, statement => statement is ReturnStatement);
+    }
+
+    [Theory]
+    [Specimen("specimen.Class1", "Calculate5")]
+    public void Reconstructs_switch_from_jump_table(MethodInfo method)
+    {
+        var body = Decompiler.DecompileBody(method);
+
+        var switchStatement = body.Statements.OfType<SwitchStatement>().Single();
+
+        // Four constant cases (labels 0..3) plus a default.
+        var labels = switchStatement.Cases
+            .Select(c => c.Pattern).OfType<ConstantPattern>()
+            .Select(pattern => (int)pattern.Value.Value);
+        Assert.Equal([0, 1, 2, 3], labels);
+        Assert.Contains(switchStatement.Cases, c => c.Pattern is DiscardPattern);
+
+        // Each case assigns the result temp and breaks; the method returns after the switch.
+        Assert.All(switchStatement.Cases, @case => Assert.Contains(@case.Body, s => s is BreakStatement));
+        Assert.Contains(body.Statements, statement => statement is ReturnStatement);
+    }
+}

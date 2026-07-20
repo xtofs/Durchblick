@@ -20,9 +20,6 @@
 
   <ItemGroup>
     <ProjectReference Include="../../src/Durchblick/Durchblick.csproj" />
-    <!-- Specimen: referenced only so its assembly is copied next to the tests for the
-         SpecimenAttribute to load and decompile; no types are used at compile time. -->
-    <ProjectReference Include="../../specimens/add/add.csproj" />
   </ItemGroup>
 
 </Project>
