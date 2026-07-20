@@ -1,10 +1,18 @@
 {
     "cSpell.words": [
+        "behaviour",
+        "behaviours",
         "Brfalse",
         "Brtrue",
         "Durchblick",
         "Ldarg",
         "Ldloc",
+        "popi",
+        "popr",
+        "Popref",
+        "Pushi",
+        "Pushr",
+        "Pushref",
         "Stloc"
     ]
 }

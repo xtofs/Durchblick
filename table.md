@@ -1,228 +1,228 @@
-Name            | Flow         | Operand             
---------------- | ------------ | --------------------
-nop             | Next         | InlineNone          
-break           | Break        | InlineNone          
-ldarg.0         | Next         | InlineNone          
-ldarg.1         | Next         | InlineNone          
-ldarg.2         | Next         | InlineNone          
-ldarg.3         | Next         | InlineNone          
-ldloc.0         | Next         | InlineNone          
-ldloc.1         | Next         | InlineNone          
-ldloc.2         | Next         | InlineNone          
-ldloc.3         | Next         | InlineNone          
-stloc.0         | Next         | InlineNone          
-stloc.1         | Next         | InlineNone          
-stloc.2         | Next         | InlineNone          
-stloc.3         | Next         | InlineNone          
-ldarg.s         | Next         | ShortInlineVar      
-ldarga.s        | Next         | ShortInlineVar      
-starg.s         | Next         | ShortInlineVar      
-ldloc.s         | Next         | ShortInlineVar      
-ldloca.s        | Next         | ShortInlineVar      
-stloc.s         | Next         | ShortInlineVar      
-ldnull          | Next         | InlineNone          
-ldc.i4.m1       | Next         | InlineNone          
-ldc.i4.0        | Next         | InlineNone          
-ldc.i4.1        | Next         | InlineNone          
-ldc.i4.2        | Next         | InlineNone          
-ldc.i4.3        | Next         | InlineNone          
-ldc.i4.4        | Next         | InlineNone          
-ldc.i4.5        | Next         | InlineNone          
-ldc.i4.6        | Next         | InlineNone          
-ldc.i4.7        | Next         | InlineNone          
-ldc.i4.8        | Next         | InlineNone          
-ldc.i4.s        | Next         | ShortInlineI        
-ldc.i4          | Next         | InlineI             
-ldc.i8          | Next         | InlineI8            
-ldc.r4          | Next         | ShortInlineR        
-ldc.r8          | Next         | InlineR             
-dup             | Next         | InlineNone          
-pop             | Next         | InlineNone          
-jmp             | Call         | InlineMethod        
-call            | Call         | InlineMethod        
-calli           | Call         | InlineSig           
-ret             | Return       | InlineNone          
-br.s            | Branch       | ShortInlineBrTarget 
-brfalse.s       | Cond_Branch  | ShortInlineBrTarget 
-brtrue.s        | Cond_Branch  | ShortInlineBrTarget 
-beq.s           | Cond_Branch  | ShortInlineBrTarget 
-bge.s           | Cond_Branch  | ShortInlineBrTarget 
-bgt.s           | Cond_Branch  | ShortInlineBrTarget 
-ble.s           | Cond_Branch  | ShortInlineBrTarget 
-blt.s           | Cond_Branch  | ShortInlineBrTarget 
-bne.un.s        | Cond_Branch  | ShortInlineBrTarget 
-bge.un.s        | Cond_Branch  | ShortInlineBrTarget 
-bgt.un.s        | Cond_Branch  | ShortInlineBrTarget 
-ble.un.s        | Cond_Branch  | ShortInlineBrTarget 
-blt.un.s        | Cond_Branch  | ShortInlineBrTarget 
-br              | Branch       | InlineBrTarget      
-brfalse         | Cond_Branch  | InlineBrTarget      
-brtrue          | Cond_Branch  | InlineBrTarget      
-beq             | Cond_Branch  | InlineBrTarget      
-bge             | Cond_Branch  | InlineBrTarget      
-bgt             | Cond_Branch  | InlineBrTarget      
-ble             | Cond_Branch  | InlineBrTarget      
-blt             | Cond_Branch  | InlineBrTarget      
-bne.un          | Cond_Branch  | InlineBrTarget      
-bge.un          | Cond_Branch  | InlineBrTarget      
-bgt.un          | Cond_Branch  | InlineBrTarget      
-ble.un          | Cond_Branch  | InlineBrTarget      
-blt.un          | Cond_Branch  | InlineBrTarget      
-switch          | Cond_Branch  | InlineSwitch        
-ldind.i1        | Next         | InlineNone          
-ldind.u1        | Next         | InlineNone          
-ldind.i2        | Next         | InlineNone          
-ldind.u2        | Next         | InlineNone          
-ldind.i4        | Next         | InlineNone          
-ldind.u4        | Next         | InlineNone          
-ldind.i8        | Next         | InlineNone          
-ldind.i         | Next         | InlineNone          
-ldind.r4        | Next         | InlineNone          
-ldind.r8        | Next         | InlineNone          
-ldind.ref       | Next         | InlineNone          
-stind.ref       | Next         | InlineNone          
-stind.i1        | Next         | InlineNone          
-stind.i2        | Next         | InlineNone          
-stind.i4        | Next         | InlineNone          
-stind.i8        | Next         | InlineNone          
-stind.r4        | Next         | InlineNone          
-stind.r8        | Next         | InlineNone          
-add             | Next         | InlineNone          
-sub             | Next         | InlineNone          
-mul             | Next         | InlineNone          
-div             | Next         | InlineNone          
-div.un          | Next         | InlineNone          
-rem             | Next         | InlineNone          
-rem.un          | Next         | InlineNone          
-and             | Next         | InlineNone          
-or              | Next         | InlineNone          
-xor             | Next         | InlineNone          
-shl             | Next         | InlineNone          
-shr             | Next         | InlineNone          
-shr.un          | Next         | InlineNone          
-neg             | Next         | InlineNone          
-not             | Next         | InlineNone          
-conv.i1         | Next         | InlineNone          
-conv.i2         | Next         | InlineNone          
-conv.i4         | Next         | InlineNone          
-conv.i8         | Next         | InlineNone          
-conv.r4         | Next         | InlineNone          
-conv.r8         | Next         | InlineNone          
-conv.u4         | Next         | InlineNone          
-conv.u8         | Next         | InlineNone          
-callvirt        | Call         | InlineMethod        
-cpobj           | Next         | InlineType          
-ldobj           | Next         | InlineType          
-ldstr           | Next         | InlineString        
-newobj          | Call         | InlineMethod        
-castclass       | Next         | InlineType          
-isinst          | Next         | InlineType          
-conv.r.un       | Next         | InlineNone          
-unbox           | Next         | InlineType          
-throw           | Throw        | InlineNone          
-ldfld           | Next         | InlineField         
-ldflda          | Next         | InlineField         
-stfld           | Next         | InlineField         
-ldsfld          | Next         | InlineField         
-ldsflda         | Next         | InlineField         
-stsfld          | Next         | InlineField         
-stobj           | Next         | InlineType          
-conv.ovf.i1.un  | Next         | InlineNone          
-conv.ovf.i2.un  | Next         | InlineNone          
-conv.ovf.i4.un  | Next         | InlineNone          
-conv.ovf.i8.un  | Next         | InlineNone          
-conv.ovf.u1.un  | Next         | InlineNone          
-conv.ovf.u2.un  | Next         | InlineNone          
-conv.ovf.u4.un  | Next         | InlineNone          
-conv.ovf.u8.un  | Next         | InlineNone          
-conv.ovf.i.un   | Next         | InlineNone          
-conv.ovf.u.un   | Next         | InlineNone          
-box             | Next         | InlineType          
-newarr          | Next         | InlineType          
-ldlen           | Next         | InlineNone          
-ldelema         | Next         | InlineType          
-ldelem.i1       | Next         | InlineNone          
-ldelem.u1       | Next         | InlineNone          
-ldelem.i2       | Next         | InlineNone          
-ldelem.u2       | Next         | InlineNone          
-ldelem.i4       | Next         | InlineNone          
-ldelem.u4       | Next         | InlineNone          
-ldelem.i8       | Next         | InlineNone          
-ldelem.i        | Next         | InlineNone          
-ldelem.r4       | Next         | InlineNone          
-ldelem.r8       | Next         | InlineNone          
-ldelem.ref      | Next         | InlineNone          
-stelem.i        | Next         | InlineNone          
-stelem.i1       | Next         | InlineNone          
-stelem.i2       | Next         | InlineNone          
-stelem.i4       | Next         | InlineNone          
-stelem.i8       | Next         | InlineNone          
-stelem.r4       | Next         | InlineNone          
-stelem.r8       | Next         | InlineNone          
-stelem.ref      | Next         | InlineNone          
-ldelem          | Next         | InlineType          
-stelem          | Next         | InlineType          
-unbox.any       | Next         | InlineType          
-conv.ovf.i1     | Next         | InlineNone          
-conv.ovf.u1     | Next         | InlineNone          
-conv.ovf.i2     | Next         | InlineNone          
-conv.ovf.u2     | Next         | InlineNone          
-conv.ovf.i4     | Next         | InlineNone          
-conv.ovf.u4     | Next         | InlineNone          
-conv.ovf.i8     | Next         | InlineNone          
-conv.ovf.u8     | Next         | InlineNone          
-refanyval       | Next         | InlineType          
-ckfinite        | Next         | InlineNone          
-mkrefany        | Next         | InlineType          
-ldtoken         | Next         | InlineTok           
-conv.u2         | Next         | InlineNone          
-conv.u1         | Next         | InlineNone          
-conv.i          | Next         | InlineNone          
-conv.ovf.i      | Next         | InlineNone          
-conv.ovf.u      | Next         | InlineNone          
-add.ovf         | Next         | InlineNone          
-add.ovf.un      | Next         | InlineNone          
-mul.ovf         | Next         | InlineNone          
-mul.ovf.un      | Next         | InlineNone          
-sub.ovf         | Next         | InlineNone          
-sub.ovf.un      | Next         | InlineNone          
-endfinally      | Return       | InlineNone          
-leave           | Branch       | InlineBrTarget      
-leave.s         | Branch       | ShortInlineBrTarget 
-stind.i         | Next         | InlineNone          
-conv.u          | Next         | InlineNone          
-prefix7         | Meta         | InlineNone          
-prefix6         | Meta         | InlineNone          
-prefix5         | Meta         | InlineNone          
-prefix4         | Meta         | InlineNone          
-prefix3         | Meta         | InlineNone          
-prefix2         | Meta         | InlineNone          
-prefix1         | Meta         | InlineNone          
-prefixref       | Meta         | InlineNone          
-arglist         | Next         | InlineNone          
-ceq             | Next         | InlineNone          
-cgt             | Next         | InlineNone          
-cgt.un          | Next         | InlineNone          
-clt             | Next         | InlineNone          
-clt.un          | Next         | InlineNone          
-ldftn           | Next         | InlineMethod        
-ldvirtftn       | Next         | InlineMethod        
-ldarg           | Next         | InlineVar           
-ldarga          | Next         | InlineVar           
-starg           | Next         | InlineVar           
-ldloc           | Next         | InlineVar           
-ldloca          | Next         | InlineVar           
-stloc           | Next         | InlineVar           
-localloc        | Next         | InlineNone          
-endfilter       | Return       | InlineNone          
-unaligned.      | Meta         | ShortInlineI        
-volatile.       | Meta         | InlineNone          
-tail.           | Meta         | InlineNone          
-initobj         | Next         | InlineType          
-constrained.    | Meta         | InlineType          
-cpblk           | Next         | InlineNone          
-initblk         | Next         | InlineNone          
-rethrow         | Throw        | InlineNone          
-sizeof          | Next         | InlineType          
-refanytype      | Next         | InlineNone          
-readonly.       | Meta         | InlineNone          
+Name            | Flow         | Operand              | Pop | Push
+--------------- | ------------ | -------------------- | --- | --
+nop             | Next         | InlineNone           | 0   | 1 
+break           | Break        | InlineNone           | 0   | 1 
+ldarg.0         | Next         | InlineNone           | 0   | 1 
+ldarg.1         | Next         | InlineNone           | 0   | 1 
+ldarg.2         | Next         | InlineNone           | 0   | 1 
+ldarg.3         | Next         | InlineNone           | 0   | 1 
+ldloc.0         | Next         | InlineNone           | 0   | 1 
+ldloc.1         | Next         | InlineNone           | 0   | 1 
+ldloc.2         | Next         | InlineNone           | 0   | 1 
+ldloc.3         | Next         | InlineNone           | 0   | 1 
+stloc.0         | Next         | InlineNone           | 1   | 1 
+stloc.1         | Next         | InlineNone           | 1   | 1 
+stloc.2         | Next         | InlineNone           | 1   | 1 
+stloc.3         | Next         | InlineNone           | 1   | 1 
+ldarg.s         | Next         | ShortInlineVar       | 0   | 1 
+ldarga.s        | Next         | ShortInlineVar       | 0   | 1 
+starg.s         | Next         | ShortInlineVar       | 1   | 1 
+ldloc.s         | Next         | ShortInlineVar       | 0   | 1 
+ldloca.s        | Next         | ShortInlineVar       | 0   | 1 
+stloc.s         | Next         | ShortInlineVar       | 1   | 1 
+ldnull          | Next         | InlineNone           | 0   | 1 
+ldc.i4.m1       | Next         | InlineNone           | 0   | 1 
+ldc.i4.0        | Next         | InlineNone           | 0   | 1 
+ldc.i4.1        | Next         | InlineNone           | 0   | 1 
+ldc.i4.2        | Next         | InlineNone           | 0   | 1 
+ldc.i4.3        | Next         | InlineNone           | 0   | 1 
+ldc.i4.4        | Next         | InlineNone           | 0   | 1 
+ldc.i4.5        | Next         | InlineNone           | 0   | 1 
+ldc.i4.6        | Next         | InlineNone           | 0   | 1 
+ldc.i4.7        | Next         | InlineNone           | 0   | 1 
+ldc.i4.8        | Next         | InlineNone           | 0   | 1 
+ldc.i4.s        | Next         | ShortInlineI         | 0   | 1 
+ldc.i4          | Next         | InlineI              | 0   | 1 
+ldc.i8          | Next         | InlineI8             | 0   | 1 
+ldc.r4          | Next         | ShortInlineR         | 0   | 1 
+ldc.r8          | Next         | InlineR              | 0   | 1 
+dup             | Next         | InlineNone           | 1   | 2 
+pop             | Next         | InlineNone           | 1   | 1 
+jmp             | Call         | InlineMethod         | 0   | 1 
+call            | Call         | InlineMethod         | -2  | 0 
+calli           | Call         | InlineSig            | -2  | 0 
+ret             | Return       | InlineNone           | -1  | 1 
+br.s            | Branch       | ShortInlineBrTarget  | 0   | 1 
+brfalse.s       | Cond_Branch  | ShortInlineBrTarget  | 1   | 1 
+brtrue.s        | Cond_Branch  | ShortInlineBrTarget  | 1   | 1 
+beq.s           | Cond_Branch  | ShortInlineBrTarget  | 2   | 1 
+bge.s           | Cond_Branch  | ShortInlineBrTarget  | 2   | 1 
+bgt.s           | Cond_Branch  | ShortInlineBrTarget  | 2   | 1 
+ble.s           | Cond_Branch  | ShortInlineBrTarget  | 2   | 1 
+blt.s           | Cond_Branch  | ShortInlineBrTarget  | 2   | 1 
+bne.un.s        | Cond_Branch  | ShortInlineBrTarget  | 2   | 1 
+bge.un.s        | Cond_Branch  | ShortInlineBrTarget  | 2   | 1 
+bgt.un.s        | Cond_Branch  | ShortInlineBrTarget  | 2   | 1 
+ble.un.s        | Cond_Branch  | ShortInlineBrTarget  | 2   | 1 
+blt.un.s        | Cond_Branch  | ShortInlineBrTarget  | 2   | 1 
+br              | Branch       | InlineBrTarget       | 0   | 1 
+brfalse         | Cond_Branch  | InlineBrTarget       | 1   | 1 
+brtrue          | Cond_Branch  | InlineBrTarget       | 1   | 1 
+beq             | Cond_Branch  | InlineBrTarget       | 2   | 1 
+bge             | Cond_Branch  | InlineBrTarget       | 2   | 1 
+bgt             | Cond_Branch  | InlineBrTarget       | 2   | 1 
+ble             | Cond_Branch  | InlineBrTarget       | 2   | 1 
+blt             | Cond_Branch  | InlineBrTarget       | 2   | 1 
+bne.un          | Cond_Branch  | InlineBrTarget       | 2   | 1 
+bge.un          | Cond_Branch  | InlineBrTarget       | 2   | 1 
+bgt.un          | Cond_Branch  | InlineBrTarget       | 2   | 1 
+ble.un          | Cond_Branch  | InlineBrTarget       | 2   | 1 
+blt.un          | Cond_Branch  | InlineBrTarget       | 2   | 1 
+switch          | Cond_Branch  | InlineSwitch         | 1   | 1 
+ldind.i1        | Next         | InlineNone           | 1   | 1 
+ldind.u1        | Next         | InlineNone           | 1   | 1 
+ldind.i2        | Next         | InlineNone           | 1   | 1 
+ldind.u2        | Next         | InlineNone           | 1   | 1 
+ldind.i4        | Next         | InlineNone           | 1   | 1 
+ldind.u4        | Next         | InlineNone           | 1   | 1 
+ldind.i8        | Next         | InlineNone           | 1   | 1 
+ldind.i         | Next         | InlineNone           | 1   | 1 
+ldind.r4        | Next         | InlineNone           | 1   | 1 
+ldind.r8        | Next         | InlineNone           | 1   | 1 
+ldind.ref       | Next         | InlineNone           | 1   | 1 
+stind.ref       | Next         | InlineNone           | 2   | 1 
+stind.i1        | Next         | InlineNone           | 2   | 1 
+stind.i2        | Next         | InlineNone           | 2   | 1 
+stind.i4        | Next         | InlineNone           | 2   | 1 
+stind.i8        | Next         | InlineNone           | 2   | 1 
+stind.r4        | Next         | InlineNone           | 1   | 1 
+stind.r8        | Next         | InlineNone           | 1   | 1 
+add             | Next         | InlineNone           | 2   | 1 
+sub             | Next         | InlineNone           | 2   | 1 
+mul             | Next         | InlineNone           | 2   | 1 
+div             | Next         | InlineNone           | 2   | 1 
+div.un          | Next         | InlineNone           | 2   | 1 
+rem             | Next         | InlineNone           | 2   | 1 
+rem.un          | Next         | InlineNone           | 2   | 1 
+and             | Next         | InlineNone           | 2   | 1 
+or              | Next         | InlineNone           | 2   | 1 
+xor             | Next         | InlineNone           | 2   | 1 
+shl             | Next         | InlineNone           | 2   | 1 
+shr             | Next         | InlineNone           | 2   | 1 
+shr.un          | Next         | InlineNone           | 2   | 1 
+neg             | Next         | InlineNone           | 1   | 1 
+not             | Next         | InlineNone           | 1   | 1 
+conv.i1         | Next         | InlineNone           | 1   | 1 
+conv.i2         | Next         | InlineNone           | 1   | 1 
+conv.i4         | Next         | InlineNone           | 1   | 1 
+conv.i8         | Next         | InlineNone           | 1   | 1 
+conv.r4         | Next         | InlineNone           | 1   | 1 
+conv.r8         | Next         | InlineNone           | 1   | 1 
+conv.u4         | Next         | InlineNone           | 1   | 1 
+conv.u8         | Next         | InlineNone           | 1   | 1 
+callvirt        | Call         | InlineMethod         | -2  | 0 
+cpobj           | Next         | InlineType           | 2   | 1 
+ldobj           | Next         | InlineType           | 1   | 1 
+ldstr           | Next         | InlineString         | 0   | 1 
+newobj          | Call         | InlineMethod         | -1  | 1 
+castclass       | Next         | InlineType           | 1   | 1 
+isinst          | Next         | InlineType           | 1   | 1 
+conv.r.un       | Next         | InlineNone           | 1   | 1 
+unbox           | Next         | InlineType           | 1   | 1 
+throw           | Throw        | InlineNone           | 1   | 1 
+ldfld           | Next         | InlineField          | 1   | 1 
+ldflda          | Next         | InlineField          | 1   | 1 
+stfld           | Next         | InlineField          | 1   | 1 
+ldsfld          | Next         | InlineField          | 0   | 1 
+ldsflda         | Next         | InlineField          | 0   | 1 
+stsfld          | Next         | InlineField          | 1   | 1 
+stobj           | Next         | InlineType           | 2   | 1 
+conv.ovf.i1.un  | Next         | InlineNone           | 1   | 1 
+conv.ovf.i2.un  | Next         | InlineNone           | 1   | 1 
+conv.ovf.i4.un  | Next         | InlineNone           | 1   | 1 
+conv.ovf.i8.un  | Next         | InlineNone           | 1   | 1 
+conv.ovf.u1.un  | Next         | InlineNone           | 1   | 1 
+conv.ovf.u2.un  | Next         | InlineNone           | 1   | 1 
+conv.ovf.u4.un  | Next         | InlineNone           | 1   | 1 
+conv.ovf.u8.un  | Next         | InlineNone           | 1   | 1 
+conv.ovf.i.un   | Next         | InlineNone           | 1   | 1 
+conv.ovf.u.un   | Next         | InlineNone           | 1   | 1 
+box             | Next         | InlineType           | 1   | 1 
+newarr          | Next         | InlineType           | 1   | 1 
+ldlen           | Next         | InlineNone           | 1   | 1 
+ldelema         | Next         | InlineType           | 1   | 1 
+ldelem.i1       | Next         | InlineNone           | 1   | 1 
+ldelem.u1       | Next         | InlineNone           | 1   | 1 
+ldelem.i2       | Next         | InlineNone           | 1   | 1 
+ldelem.u2       | Next         | InlineNone           | 1   | 1 
+ldelem.i4       | Next         | InlineNone           | 1   | 1 
+ldelem.u4       | Next         | InlineNone           | 1   | 1 
+ldelem.i8       | Next         | InlineNone           | 1   | 1 
+ldelem.i        | Next         | InlineNone           | 1   | 1 
+ldelem.r4       | Next         | InlineNone           | 1   | 1 
+ldelem.r8       | Next         | InlineNone           | 1   | 1 
+ldelem.ref      | Next         | InlineNone           | 1   | 1 
+stelem.i        | Next         | InlineNone           | 1   | 1 
+stelem.i1       | Next         | InlineNone           | 1   | 1 
+stelem.i2       | Next         | InlineNone           | 1   | 1 
+stelem.i4       | Next         | InlineNone           | 1   | 1 
+stelem.i8       | Next         | InlineNone           | 1   | 1 
+stelem.r4       | Next         | InlineNone           | 1   | 1 
+stelem.r8       | Next         | InlineNone           | 1   | 1 
+stelem.ref      | Next         | InlineNone           | 1   | 1 
+ldelem          | Next         | InlineType           | 1   | 1 
+stelem          | Next         | InlineType           | 3   | 1 
+unbox.any       | Next         | InlineType           | 1   | 1 
+conv.ovf.i1     | Next         | InlineNone           | 1   | 1 
+conv.ovf.u1     | Next         | InlineNone           | 1   | 1 
+conv.ovf.i2     | Next         | InlineNone           | 1   | 1 
+conv.ovf.u2     | Next         | InlineNone           | 1   | 1 
+conv.ovf.i4     | Next         | InlineNone           | 1   | 1 
+conv.ovf.u4     | Next         | InlineNone           | 1   | 1 
+conv.ovf.i8     | Next         | InlineNone           | 1   | 1 
+conv.ovf.u8     | Next         | InlineNone           | 1   | 1 
+refanyval       | Next         | InlineType           | 1   | 1 
+ckfinite        | Next         | InlineNone           | 1   | 1 
+mkrefany        | Next         | InlineType           | 1   | 1 
+ldtoken         | Next         | InlineTok            | 0   | 1 
+conv.u2         | Next         | InlineNone           | 1   | 1 
+conv.u1         | Next         | InlineNone           | 1   | 1 
+conv.i          | Next         | InlineNone           | 1   | 1 
+conv.ovf.i      | Next         | InlineNone           | 1   | 1 
+conv.ovf.u      | Next         | InlineNone           | 1   | 1 
+add.ovf         | Next         | InlineNone           | 2   | 1 
+add.ovf.un      | Next         | InlineNone           | 2   | 1 
+mul.ovf         | Next         | InlineNone           | 2   | 1 
+mul.ovf.un      | Next         | InlineNone           | 2   | 1 
+sub.ovf         | Next         | InlineNone           | 2   | 1 
+sub.ovf.un      | Next         | InlineNone           | 2   | 1 
+endfinally      | Return       | InlineNone           | 0   | 1 
+leave           | Branch       | InlineBrTarget       | 0   | 1 
+leave.s         | Branch       | ShortInlineBrTarget  | 0   | 1 
+stind.i         | Next         | InlineNone           | 2   | 1 
+conv.u          | Next         | InlineNone           | 1   | 1 
+prefix7         | Meta         | InlineNone           | 0   | 1 
+prefix6         | Meta         | InlineNone           | 0   | 1 
+prefix5         | Meta         | InlineNone           | 0   | 1 
+prefix4         | Meta         | InlineNone           | 0   | 1 
+prefix3         | Meta         | InlineNone           | 0   | 1 
+prefix2         | Meta         | InlineNone           | 0   | 1 
+prefix1         | Meta         | InlineNone           | 0   | 1 
+prefixref       | Meta         | InlineNone           | 0   | 1 
+arglist         | Next         | InlineNone           | 0   | 1 
+ceq             | Next         | InlineNone           | 2   | 1 
+cgt             | Next         | InlineNone           | 2   | 1 
+cgt.un          | Next         | InlineNone           | 2   | 1 
+clt             | Next         | InlineNone           | 2   | 1 
+clt.un          | Next         | InlineNone           | 2   | 1 
+ldftn           | Next         | InlineMethod         | 0   | 1 
+ldvirtftn       | Next         | InlineMethod         | 1   | 1 
+ldarg           | Next         | InlineVar            | 0   | 1 
+ldarga          | Next         | InlineVar            | 0   | 1 
+starg           | Next         | InlineVar            | 1   | 1 
+ldloc           | Next         | InlineVar            | 0   | 1 
+ldloca          | Next         | InlineVar            | 0   | 1 
+stloc           | Next         | InlineVar            | 1   | 1 
+localloc        | Next         | InlineNone           | 1   | 1 
+endfilter       | Return       | InlineNone           | 1   | 1 
+unaligned.      | Meta         | ShortInlineI         | 0   | 1 
+volatile.       | Meta         | InlineNone           | 0   | 1 
+tail.           | Meta         | InlineNone           | 0   | 1 
+initobj         | Next         | InlineType           | 1   | 1 
+constrained.    | Meta         | InlineType           | 0   | 1 
+cpblk           | Next         | InlineNone           | 3   | 1 
+initblk         | Next         | InlineNone           | 3   | 1 
+rethrow         | Throw        | InlineNone           | 0   | 1 
+sizeof          | Next         | InlineType           | 0   | 1 
+refanytype      | Next         | InlineNone           | 1   | 1 
+readonly.       | Meta         | InlineNone           | 0   | 1 

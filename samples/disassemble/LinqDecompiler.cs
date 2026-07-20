@@ -6,17 +6,16 @@ using Durchblick.IL;
 
 
 
-public record DecompileResult(Expression? Expression, Dictionary<int, Expression> Locals)
+public record DecompileResult(Dictionary<int, Expression> Locals, IReadOnlyList<Expression> Stack)
 {
-    public static implicit operator DecompileResult((Expression? Expression, Dictionary<int, Expression> Locals) tuple) => new DecompileResult(tuple.Expression, tuple.Locals);
+    public static implicit operator DecompileResult((Dictionary<int, Expression> Locals, IReadOnlyList<Expression> Stack) tuple) => new DecompileResult(tuple.Locals, tuple.Stack);
 }
 
 public static class LinqDecompiler
 {
 
 
-
-    public static DecompileResult DecompileExpression(ControlFlowGraph graph, MethodInfo methodInfo, BasicBlock block)
+    public static DecompileResult DecompileBlock(ControlFlowGraph graph, MethodInfo methodInfo, BasicBlock block)
     {
         var stack = new Stack<Expression>();
         var arguments = CreateArgumentExpressions(methodInfo);
@@ -124,6 +123,12 @@ public static class LinqDecompiler
                 case var _ when instruction.OpCode.FlowControl is System.Reflection.Emit.FlowControl.Branch:
                 case var _ when instruction.OpCode.FlowControl is System.Reflection.Emit.FlowControl.Cond_Branch:
                 case ILOpCode.Ret:
+                    for (var i = 0; i < instruction.OpCode.StackBehaviourPop.NumberOfPops(); i++)
+                    {
+                        stack.Pop();
+                    }
+
+
                     goto Done;
 
 
@@ -142,9 +147,8 @@ public static class LinqDecompiler
             }
             continue;
         }
-        var top = stack.TryPop(out var _top) ? _top : null;
 
-        return (top, localValues);
+        return (localValues, stack.AsEnumerable().ToList());
     }
 
     private static readonly Dictionary<ILOpCode, ExpressionType> BinaryOperators = new()

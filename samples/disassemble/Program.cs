@@ -19,24 +19,25 @@ internal class Program
                 Console.WriteLine($"{type.Name}.{method.Name}");
                 foreach (var block in cfg.Blocks)
                 {
-                    Console.WriteLine($"    Block IL_{cfg.Instructions[block.StartIndex].Offset:X4}  [{string.Join(", ", from s in block.Successors select string.Format("IL_{0:X4}", cfg.Instructions[cfg.Blocks[s].StartIndex].Offset))}]");
+                    Console.WriteLine();
+                    Console.WriteLine($"    # IL_{cfg.Instructions[block.StartIndex].Offset:X4} -> [{string.Join(", ", from s in block.Successors select string.Format("IL_{0:X4}", cfg.Instructions[cfg.Blocks[s].StartIndex].Offset))}]");
                     try
                     {
-                        var result = LinqDecompiler.DecompileExpression(cfg, method, block);
-                        var locals = result.Locals.Count > 0 ? string.Join(", ", result.Locals.Select(kv => $"{kv.Key}: {kv.Value.Format()}")) : "";
-                        Console.WriteLine($"        # {result.Expression.Format()} [{locals}]");
+                        var result = LinqDecompiler.DecompileBlock(cfg, method, block);
+                        if (result.Locals.Count > 0 || result.Stack.Count > 0)
+                        {
+                            var locals = result.Locals.Count > 0 ? string.Join(", ", result.Locals.Select(kv => $"loc{kv.Key} := {kv.Value.Format()}")) : "";
+                            var stack = result.Stack.Count > 0 ? "; " + string.Join(", ", result.Stack.Select(e => e.Format())) : "";
+                            Console.WriteLine($"    # {locals}{stack}");
+                        }
                     }
-                    catch (NotSupportedException ex)
+                    catch (Exception ex)
                     {
-                        Console.WriteLine($"        # {ex.Message}");
-                    }
-                    catch (System.InvalidOperationException ex)
-                    {
-                        Console.WriteLine($"        # {ex.Message}");
+                        Console.WriteLine($"    # {ex.Message}");
                     }
                     foreach (var instruction in cfg.Instructions[block.StartIndex..(block.EndIndex + 1)])
                     {
-                        Console.WriteLine($"        {instruction}");
+                        Console.WriteLine($"    {instruction}");
                     }
                 }
             }
