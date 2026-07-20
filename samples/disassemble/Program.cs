@@ -1,8 +1,5 @@
-﻿using System.IO;
-using System.Reflection;
-using Durchblick.CSharp.Syntax;
+﻿using System.Reflection;
 using Durchblick.ControlFlow;
-using Durchblick.Decompilation;
 
 internal class Program
 {
@@ -18,52 +15,33 @@ internal class Program
             {
                 var cfg = BasicBlockBuilder.Build(method);
 
+                Console.WriteLine();
                 Console.WriteLine($"{type.Name}.{method.Name}");
                 foreach (var block in cfg.Blocks)
                 {
-                    Console.WriteLine($"    block IL_{cfg.Instructions[block.StartIndex].Offset:X4}  [{string.Join(", ", from s in block.Successors select string.Format("IL_{0:X4}", cfg.Instructions[cfg.Blocks[s].StartIndex].Offset))}]");
+                    Console.WriteLine($"    Block IL_{cfg.Instructions[block.StartIndex].Offset:X4}  [{string.Join(", ", from s in block.Successors select string.Format("IL_{0:X4}", cfg.Instructions[cfg.Blocks[s].StartIndex].Offset))}]");
+                    try
+                    {
+                        var result = LinqDecompiler.DecompileExpression(cfg, method, block);
+                        var locals = result.Locals.Count > 0 ? string.Join(", ", result.Locals.Select(kv => $"{kv.Key}: {kv.Value.Format()}")) : "";
+                        Console.WriteLine($"        # {result.Expression.Format()} [{locals}]");
+                    }
+                    catch (NotSupportedException ex)
+                    {
+                        Console.WriteLine($"        # {ex.Message}");
+                    }
+                    catch (System.InvalidOperationException ex)
+                    {
+                        Console.WriteLine($"        # {ex.Message}");
+                    }
                     foreach (var instruction in cfg.Instructions[block.StartIndex..(block.EndIndex + 1)])
                     {
                         Console.WriteLine($"        {instruction}");
                     }
                 }
-
-                try
-                {
-                    var expression = Decompiler.DecompileExpression(cfg, method);
-                    Console.WriteLine($"    expression: {FormatExpression(expression)}");
-                }
-                catch (NotSupportedException ex)
-                {
-                    Console.WriteLine($"    expression: <unsupported: {ex.Message}>");
-                }
             }
         }
     }
-
-    private static string FormatExpression(Expression? expression) => expression switch
-    {
-        null => "<void>",
-        IdentifierExpression identifier => identifier.Name,
-        LiteralExpression literal => literal.Value?.ToString() ?? "null",
-        BinaryExpression binary => $"({FormatExpression(binary.Left)} {FormatBinaryOperator(binary.Operator)} {FormatExpression(binary.Right)})",
-        _ => expression.ToString(),
-    };
-
-    private static string FormatBinaryOperator(BinaryOperator op) => op switch
-    {
-        BinaryOperator.Add => "+",
-        BinaryOperator.Subtract => "-",
-        BinaryOperator.Multiply => "*",
-        BinaryOperator.Divide => "/",
-        BinaryOperator.And => "&",
-        BinaryOperator.Or => "|",
-        BinaryOperator.Equals => "==",
-        BinaryOperator.NotEquals => "!=",
-        BinaryOperator.Less => "<",
-        BinaryOperator.Greater => ">",
-        _ => op.ToString(),
-    };
 
     private static string FindRepoRoot()
     {
@@ -80,5 +58,4 @@ internal class Program
 
         throw new DirectoryNotFoundException("Could not locate repository root (folder containing 'specimens').");
     }
-
 }
