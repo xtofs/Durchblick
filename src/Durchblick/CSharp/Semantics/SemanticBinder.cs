@@ -884,14 +884,14 @@ internal sealed class SemanticModelBuilder
     {
         return lit.Value switch
         {
-            int => _types!.ResolveBuiltIn(BuiltInTypeNames.Int),
-            long => _types!.ResolveBuiltIn(BuiltInTypeNames.Long),
-            float => _types!.ResolveBuiltIn(BuiltInTypeNames.Float),
-            double => _types!.ResolveBuiltIn(BuiltInTypeNames.Double),
-            bool => _types!.ResolveBuiltIn(BuiltInTypeNames.Bool),
-            string => _types!.ResolveBuiltIn(BuiltInTypeNames.String),
-            char => _types!.ResolveBuiltIn(BuiltInTypeNames.Char),
-            null => _types!.ResolveBuiltIn(BuiltInTypeNames.Null),
+            int => _types!.ResolveBuiltIn("int"),
+            long => _types!.ResolveBuiltIn("long"),
+            float => _types!.ResolveBuiltIn("float"),
+            double => _types!.ResolveBuiltIn("double"),
+            bool => _types!.ResolveBuiltIn("bool"),
+            string => _types!.ResolveBuiltIn("string"),
+            char => _types!.ResolveBuiltIn("char"),
+            null => _types!.ResolveBuiltIn("null"),
 
             _ => new ErrorTypeSymbol($"Unknown literal type: {lit.Value}")
         };

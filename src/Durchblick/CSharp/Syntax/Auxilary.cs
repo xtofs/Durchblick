@@ -4,29 +4,29 @@ using Durchblick.Collections;
 
 public sealed record TypeReference(string Name, string? Namespace, ImmutableCollection<TypeReference> GenericArguments) : AstNode;
 
-public static class BuiltInTypeNames
-{
-    public const string Bool = "bool";
-    public const string Char = "char";
-    public const string Double = "double";
-    public const string Float = "float";
-    public const string Int = "int";
-    public const string Long = "long";
-    public const string Null = "null";
-    public const string String = "string";
-    public const string Void = "void";
-}
+// public static class BuiltInTypeNames
+// {
+//     public const string Bool = "bool";
+//     public const string Char = "char";
+//     public const string Double = "double";
+//     public const string Float = "float";
+//     public const string Int = "int";
+//     public const string Long = "long";
+//     public const string Null = "null";
+//     public const string String = "string";
+//     public const string Void = "void";
+// }
 
 public static class BuiltInTypeReferences
 {
-    public static TypeReference Bool { get; } = Declaration.TypeRef(BuiltInTypeNames.Bool);
-    public static TypeReference Char { get; } = Declaration.TypeRef(BuiltInTypeNames.Char);
-    public static TypeReference Double { get; } = Declaration.TypeRef(BuiltInTypeNames.Double);
-    public static TypeReference Float { get; } = Declaration.TypeRef(BuiltInTypeNames.Float);
-    public static TypeReference Int { get; } = Declaration.TypeRef(BuiltInTypeNames.Int);
-    public static TypeReference Long { get; } = Declaration.TypeRef(BuiltInTypeNames.Long);
-    public static TypeReference String { get; } = Declaration.TypeRef(BuiltInTypeNames.String);
-    public static TypeReference Void { get; } = Declaration.TypeRef(BuiltInTypeNames.Void);
+    public static TypeReference Bool { get; } = Declaration.TypeRef("Bool", "System");
+    public static TypeReference Char { get; } = Declaration.TypeRef("Char", "System");
+    public static TypeReference Double { get; } = Declaration.TypeRef("Double", "System");
+    public static TypeReference Float { get; } = Declaration.TypeRef("Float", "System");
+    public static TypeReference Int { get; } = Declaration.TypeRef("Int32", "System");
+    public static TypeReference Long { get; } = Declaration.TypeRef("Int64", "System");
+    public static TypeReference String { get; } = Declaration.TypeRef("String", "System");
+    public static TypeReference Object { get; } = Declaration.TypeRef("Object", "System");
 }
 
 public sealed record SymbolReference(string Id, SymbolKind Kind);
@@ -63,3 +63,17 @@ public abstract record ExpressionOrBlock
 
 public sealed record ExprBody(Expression Value) : ExpressionOrBlock;
 public sealed record BlockBody(BlockStatement Block) : ExpressionOrBlock;
+
+
+public static class BuiltInTypeNames
+{
+    public const string Bool = "bool";
+    public const string Char = "char";
+    public const string Double = "double";
+    public const string Float = "float";
+    public const string Int = "int";
+    public const string Long = "long";
+    public const string Null = "null";
+    public const string String = "string";
+    public const string Void = "void";
+}

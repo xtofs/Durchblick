@@ -13,6 +13,9 @@ public sealed class ImmutableCollection<T>(T[] items) : IEnumerable<T>
     public static ImmutableCollection<TypeReference> Empty { get; } = new ImmutableCollection<TypeReference>(Array.Empty<TypeReference>());
 
     public int Count => _items.Length;
+    
+
+    public T this[int index] => _items[index];
 
     public IEnumerator<T> GetEnumerator()
     {

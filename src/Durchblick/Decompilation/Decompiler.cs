@@ -128,7 +128,7 @@ public static class Decompiler
                         stack.Push(Expression.Literal(instruction.Operand.GetFloat64(), BuiltInTypeReferences.Double));
                         break;
                     case ILOpCode.Ldnull:
-                        stack.Push(Expression.Literal(null!, Declaration.TypeRef(BuiltInTypeNames.Null)));
+                        stack.Push(Expression.Literal(null!, BuiltInTypeReferences.Object));
                         break;
 
                     case ILOpCode.Add:
