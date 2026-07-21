@@ -48,4 +48,16 @@ public class Class1
             default: return -1;
         }
     }
+
+    public int Calculate6(int a)
+    {
+        var sum = 0;
+        var enumerator = Enumerable.Range(0, a).GetEnumerator();
+        while (enumerator.MoveNext())
+        {
+            var x = enumerator.Current;
+            sum += x;
+        }
+        return sum;
+    }
 }

@@ -25,13 +25,14 @@ public readonly struct CodeFormattingInterpolatedStringHandler
     /// <summary>
     /// Creates a new separated list with the specified items and separator.
     /// </summary>
+    [Obsolete("Use Delimited with empty open and close delimiters instead.")]
     private static SeparatedList<T> Separated<T>(ImmutableCollection<T> items, string separator)
         => new(items, separator);
 
     /// <summary>
     /// Creates a new delimited list with the specified items, open and close delimiters, separator, and an option to omit when empty.
     /// </summary>
-    private static DelimitedList<T> Delimited<T>(ImmutableCollection<T> items, string open, string separator, string close, bool omitWhenEmpty)
+    private static DelimitedList<T> Delimited<T>(ImmutableCollection<T> items, string open, string separator, string close, bool omitWhenEmpty = false)
         => new(items, open, separator, close, omitWhenEmpty);
 
     private static DelimitedList<T> CurlyBraces<T>(ImmutableCollection<T> items)
@@ -556,9 +557,9 @@ public readonly struct CodeFormattingInterpolatedStringHandler
         }
     }
 
-    public readonly void AppendFormatted(BlockStatement statement)
+    public readonly void AppendFormatted(BlockStatement block)
     {
-        _formatter.Format($"{CurlyBraces(statement.Statements)}");
+        _formatter.Format($"{CurlyBraces(block.Statements)}");
     }
 
     public readonly void AppendFormatted(ExpressionStatement statement)
@@ -588,15 +589,17 @@ public readonly struct CodeFormattingInterpolatedStringHandler
     public readonly void AppendFormatted(ForStatement statement)
     {
         _formatter.writer.Write("for (");
-        _formatter.Format($"{Separated(statement.Initializer, " ")}");
-        _formatter.writer.Write(" ");
-        if (statement.Condition is not null)
-        {
-            _formatter.Format($"{statement.Condition}");
-        }
+        // _formatter.Format($"{Separated(statement.Initializer, " ")}");
+        _formatter.Format($"{Delimited(statement.Initializer, "", " ", " ")}");
+        // _formatter.writer.Write(" ");
+        // if (statement.Condition is not null)
+        // {
+        _formatter.Format($"{statement.Condition!}");
+        // }
 
         _formatter.writer.Write("; ");
-        _formatter.Format($"{Separated(statement.Iterator, " ")}");
+        // _formatter.Format($"{Separated(statement.Iterator, " ")}");
+        _formatter.Format($"{Delimited(statement.Iterator, "", " ", "")}");
         _formatter.Format($") {statement.Body}");
     }
 
@@ -733,11 +736,7 @@ public readonly struct CodeFormattingInterpolatedStringHandler
             _formatter.writer.Write(" ");
         }
 
-        _formatter.Format($"{Separated(declaration.Modifiers, " ")}");
-        if (declaration.Modifiers.Count > 0)
-        {
-            _formatter.writer.Write(" ");
-        }
+        _formatter.Format($"{Delimited(declaration.Modifiers, "", " ", " ")}");
 
         switch (declaration.Kind)
         {
@@ -752,7 +751,9 @@ public readonly struct CodeFormattingInterpolatedStringHandler
                 _formatter.Format($"{Delimited(declaration.Parameters, "(", ", ", ")", omitWhenEmpty: false)}");
                 if (declaration.Body is not null)
                 {
-                    _formatter.Format($" {declaration.Body}");
+                    var locals = GetLocalDeclarations(declaration.Body);
+                    _formatter.Format($"// {string.Join(", ", locals)}");
+                    _formatter.Format($"{declaration.Body}");
                 }
                 else
                 {
@@ -777,6 +778,21 @@ public readonly struct CodeFormattingInterpolatedStringHandler
             default:
                 _formatter.Format($"{declaration.TypeReference} {declaration.Name};");
                 break;
+        }
+    }
+
+    private HashSet<string> GetLocalDeclarations(Statement body)
+    {
+        switch (body)
+        {
+            case ExpressionStatement es:
+                return es.Expression is AssignExpression ae && ae.Target is IdentifierExpression ie ? [ie.Name] : [];
+            case BlockStatement bs:
+                return [.. bs.Statements.SelectMany(GetLocalDeclarations)];
+            case WhileStatement ws:
+                return GetLocalDeclarations(ws.Body);
+            default:
+                return [];
         }
     }
 

@@ -50,10 +50,12 @@ public class Class1
     public int Calculate6(int a)
     {
         var sum = 0;
-        //     foreach (var x in Enumerable.Range(0, a))
-        //     {
-        //         sum += x;
-        //     }
+        var enumerator = Enumerable.Range(0, a).GetEnumerator();
+        while (enumerator.MoveNext())
+        {
+            var x = enumerator.Current;
+            sum += x;
+        }
         return sum;
     }
 }

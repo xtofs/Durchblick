@@ -291,16 +291,11 @@ internal sealed class Structurer
                     var left = stack.Pop();
                     stack.Push(Expression.Binary(Decompiler.BinaryOperators[instruction.ILOpCode], left, right));
                     break;
-                // case ILOpCode.Call:
-                //     var method = instruction.Operand.GetMethod();
-                //     var parameters = method.GetParameters();
-                //     var arguments = new Expression[parameters.Length];
-                //     for (i = parameters.Length - 1; i >= 0; i--)
-                //     {
-                //         arguments[i] = stack.Pop();
-                //     }
-                //     stack.Push(Expression.Call(null!, new SymbolReference(method.Name, SymbolKind.Method), arguments));
-                //     break;
+
+                case ILOpCode.Call:
+                case ILOpCode.Callvirt:
+                    PushCallExpression(stack, instruction.Operand.GetMethod());
+                    break;
 
                 // branching instructions
 
@@ -328,5 +323,21 @@ internal sealed class Structurer
         }
 
         return new BlockSim(statements, ExitKind.FallThrough, null, false);
+    }
+
+    private static void PushCallExpression(Stack<Expression> stack, MethodInfo method)
+    {
+        var parameters = method.GetParameters();
+        var arguments = new Expression[parameters.Length];
+        for (var parameterIndex = parameters.Length - 1; parameterIndex >= 0; parameterIndex--)
+        {
+            arguments[parameterIndex] = stack.Pop();
+        }
+
+        var symbol = new SymbolReference(method.Name, SymbolKind.Method);
+        Expression target = method.IsStatic
+            ? Expression.Identifier(method.Name, symbol)
+            : Expression.Member(stack.Pop(), method.Name, symbol);
+        stack.Push(Expression.Call(target, symbol, arguments));
     }
 }

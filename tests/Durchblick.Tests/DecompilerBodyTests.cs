@@ -65,4 +65,17 @@ public class DecompilerBodyTests
         Assert.All(switchStatement.Cases, @case => Assert.Contains(@case.Body, s => s is BreakStatement));
         Assert.Contains(body.Statements, statement => statement is ReturnStatement);
     }
+
+    [Theory]
+    [Specimen("specimen.Class1", "Calculate6")]
+    public void Reconstructs_loop_with_method_calls(MethodInfo method)
+    {
+        var body = Decompiler.DecompileBody(method);
+
+        var whileStatement = body.Statements.OfType<WhileStatement>().Single();
+        var loopBody = Assert.IsType<BlockStatement>(whileStatement.Body);
+        Assert.Contains(loopBody.Statements, statement => statement is ExpressionStatement { Expression: AssignExpression { Value: CallExpression } });
+        Assert.Contains(loopBody.Statements, statement => statement is IfStatement);
+        Assert.Contains(body.Statements, statement => statement is ReturnStatement);
+    }
 }
