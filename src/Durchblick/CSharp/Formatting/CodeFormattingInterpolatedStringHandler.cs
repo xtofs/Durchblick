@@ -43,6 +43,73 @@ public readonly struct CodeFormattingInterpolatedStringHandler
         return Delimited(items, "\n{\x0E\n", "\n", "\x0F\n}", omitWhenEmpty: false);
     }
 
+    /// <summary>C# operator precedence levels (higher binds tighter). Only expression operators matter.</summary>
+    private static class Precedence
+    {
+        public const int Primary = 12;        // literal, identifier, call, member/index access, new, tuple
+        public const int Unary = 11;          // unary operator, cast, await
+        public const int Multiplicative = 10; // Multiply, Divide
+        public const int Additive = 9;        // Add, Subtract
+        public const int Relational = 8;      // Less, Greater
+        public const int Equality = 7;        // Equals, NotEquals
+        public const int BitAnd = 6;          // And (&)
+        public const int BitOr = 5;           // Or (|)
+        public const int Conditional = 3;     // ?:
+        public const int Assignment = 2;      // =
+
+        // Note: the model's And/Or format to the bitwise & / |, so they sit below equality.
+        public static int Of(BinaryOperator op) => op switch
+        {
+            BinaryOperator.Multiply or BinaryOperator.Divide => Multiplicative,
+            BinaryOperator.Add or BinaryOperator.Subtract => Additive,
+            BinaryOperator.Less or BinaryOperator.Greater => Relational,
+            BinaryOperator.Equals or BinaryOperator.NotEquals => Equality,
+            BinaryOperator.And => BitAnd,
+            BinaryOperator.Or => BitOr,
+            _ => Additive,
+        };
+
+        public static int Of(Expression e) => e switch
+        {
+            BinaryExpression b => Of(b.Operator),
+            ConditionalExpression => Conditional,
+            AssignExpression => Assignment,
+            UnaryExpression or CastExpression or AwaitExpression => Unary,
+            _ => Primary,
+        };
+    }
+
+    /// <summary>
+    /// A sub-expression together with its surrounding precedence context. <see cref="AppendFormatted(Operand)"/>
+    /// wraps it in parentheses only when its own precedence is lower than the surrounding one (or equal on the
+    /// associativity-sensitive side).
+    /// </summary>
+    private readonly record struct Operand(Expression Node, int OuterPrecedence, bool ParenthesizeOnEqual);
+
+    /// <summary>Left operand of a left-associative operator (no parentheses when precedence is equal).</summary>
+    private static Operand Left(Expression node, int outer) => new(node, outer, ParenthesizeOnEqual: false);
+
+    /// <summary>Right operand of a left-associative operator (parenthesized when precedence is equal).</summary>
+    private static Operand Right(Expression node, int outer) => new(node, outer, ParenthesizeOnEqual: true);
+
+    /// <summary>An operand whose only rule is "parenthesize when strictly lower precedence".</summary>
+    private static Operand Inner(Expression node, int outer) => new(node, outer, ParenthesizeOnEqual: false);
+
+    private readonly void AppendFormatted(Operand operand)
+    {
+        var inner = Precedence.Of(operand.Node);
+        var parenthesize = inner < operand.OuterPrecedence
+            || (inner == operand.OuterPrecedence && operand.ParenthesizeOnEqual);
+        if (parenthesize)
+        {
+            _formatter.Format($"({operand.Node})");
+        }
+        else
+        {
+            _formatter.Format($"{operand.Node}");
+        }
+    }
+
     public readonly void AppendLiteral(string s)
     {
         _formatter.writer.Write(s);
@@ -360,33 +427,36 @@ public readonly struct CodeFormattingInterpolatedStringHandler
 
     public readonly void AppendFormatted(UnaryExpression expression)
     {
-        _formatter.Format($"{expression.Operator}{expression.Operand}");
+        _formatter.Format($"{expression.Operator}{Inner(expression.Operand, Precedence.Unary)}");
     }
 
     public readonly void AppendFormatted(BinaryExpression expression)
     {
-        _formatter.Format($"{expression.Left} {expression.Operator} {expression.Right}");
+        var p = Precedence.Of(expression.Operator);
+        _formatter.Format($"{Left(expression.Left, p)} {expression.Operator} {Right(expression.Right, p)}");
     }
 
     public readonly void AppendFormatted(ConditionalExpression expression)
     {
-        _formatter.Format($"{expression.Condition} ? {expression.Then} : {expression.Else}");
+        // Right-associative: the else arm nests without parentheses; the condition sits one level
+        // higher so a nested ?: or assignment condition parenthesizes.
+        _formatter.Format($"{Inner(expression.Condition, Precedence.Conditional + 1)} ? {Inner(expression.Then, Precedence.Conditional)} : {Right(expression.Else, Precedence.Conditional)}");
     }
 
     public readonly void AppendFormatted(CallExpression expression)
     {
-        _formatter.Format($"{expression.Target}");
+        _formatter.Format($"{Inner(expression.Target, Precedence.Primary)}");
         _formatter.Format($"{Delimited(expression.Arguments, "(", ", ", ")", omitWhenEmpty: false)}");
     }
 
     public readonly void AppendFormatted(MemberAccessExpression expression)
     {
-        _formatter.Format($"{expression.Target}.{expression.MemberName}");
+        _formatter.Format($"{Inner(expression.Target, Precedence.Primary)}.{expression.MemberName}");
     }
 
     public readonly void AppendFormatted(IndexAccessExpression expression)
     {
-        _formatter.Format($"{expression.Target}");
+        _formatter.Format($"{Inner(expression.Target, Precedence.Primary)}");
         _formatter.Format($"{Delimited(expression.Indices, "[", ", ", "]", omitWhenEmpty: false)}");
     }
 
@@ -413,12 +483,12 @@ public readonly struct CodeFormattingInterpolatedStringHandler
 
     public readonly void AppendFormatted(CastExpression expression)
     {
-        _formatter.Format($"({expression.Type}){expression.Expression}");
+        _formatter.Format($"({expression.Type}){Inner(expression.Expression, Precedence.Unary)}");
     }
 
     public readonly void AppendFormatted(AwaitExpression expression)
     {
-        _formatter.Format($"await {expression.Expression}");
+        _formatter.Format($"await {Inner(expression.Expression, Precedence.Unary)}");
     }
 
     public readonly void AppendFormatted(Parameter expression)
@@ -428,7 +498,8 @@ public readonly struct CodeFormattingInterpolatedStringHandler
 
     public readonly void AppendFormatted(AssignExpression expression)
     {
-        _formatter.Format($"{expression.Target} = {expression.Value}");
+        // Right-associative, lowest precedence.
+        _formatter.Format($"{Left(expression.Target, Precedence.Assignment)} = {Inner(expression.Value, Precedence.Assignment)}");
     }
 
     public readonly void AppendFormatted(Expression expr)
