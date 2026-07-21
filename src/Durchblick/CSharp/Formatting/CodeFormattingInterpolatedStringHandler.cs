@@ -52,20 +52,19 @@ public readonly struct CodeFormattingInterpolatedStringHandler
         public const int Additive = 9;        // Add, Subtract
         public const int Relational = 8;      // Less, Greater
         public const int Equality = 7;        // Equals, NotEquals
-        public const int BitAnd = 6;          // And (&)
-        public const int BitOr = 5;           // Or (|)
+        public const int LogicalAnd = 6;      // And (&&)
+        public const int LogicalOr = 5;       // Or (||)
         public const int Conditional = 3;     // ?:
         public const int Assignment = 2;      // =
 
-        // Note: the model's And/Or format to the bitwise & / |, so they sit below equality.
         public static int Of(BinaryOperator op) => op switch
         {
             BinaryOperator.Multiply or BinaryOperator.Divide => Multiplicative,
             BinaryOperator.Add or BinaryOperator.Subtract => Additive,
             BinaryOperator.Less or BinaryOperator.Greater => Relational,
             BinaryOperator.Equals or BinaryOperator.NotEquals => Equality,
-            BinaryOperator.And => BitAnd,
-            BinaryOperator.Or => BitOr,
+            BinaryOperator.And => LogicalAnd,
+            BinaryOperator.Or => LogicalOr,
             _ => Additive,
         };
 
@@ -369,7 +368,7 @@ public readonly struct CodeFormattingInterpolatedStringHandler
 
     public readonly void AppendFormatted(BinaryOperator binaryOperator)
     {
-        var op = binaryOperator switch { BinaryOperator.Add => "+", BinaryOperator.Subtract => "-", BinaryOperator.Multiply => "*", BinaryOperator.Divide => "/", BinaryOperator.And => "&", BinaryOperator.Or => "|", BinaryOperator.Equals => "==", BinaryOperator.NotEquals => "!=", BinaryOperator.Less => "<", BinaryOperator.Greater => ">", _ => "??" };
+        var op = binaryOperator switch { BinaryOperator.Add => "+", BinaryOperator.Subtract => "-", BinaryOperator.Multiply => "*", BinaryOperator.Divide => "/", BinaryOperator.And => "&&", BinaryOperator.Or => "||", BinaryOperator.Equals => "==", BinaryOperator.NotEquals => "!=", BinaryOperator.Less => "<", BinaryOperator.Greater => ">", _ => "??" };
         _formatter.Format($"{op}");
     }
 

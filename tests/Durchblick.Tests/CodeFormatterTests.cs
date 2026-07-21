@@ -33,6 +33,14 @@ public class CodeFormatterTests
     public void Equal_precedence_needs_no_parentheses_between_add_and_subtract_on_the_left()
         => Assert.Equal("a + b - c", Format(Sub(Add(A, B), C)));
 
+    [Fact]
+    public void Logical_and_binds_tighter_than_logical_or()
+        => Assert.Equal("a && b || c", Format(Or(And(A, B), C)));
+
+    [Fact]
+    public void Logical_or_operand_of_logical_and_is_parenthesized()
+        => Assert.Equal("a && (b || c)", Format(And(A, Or(B, C))));
+
     private static string Format(Expression expression)
     {
         var writer = new StringWriter();
@@ -45,4 +53,6 @@ public class CodeFormatterTests
     private static BinaryExpression Add(Expression l, Expression r) => Expression.Binary(BinaryOperator.Add, l, r);
     private static BinaryExpression Sub(Expression l, Expression r) => Expression.Binary(BinaryOperator.Subtract, l, r);
     private static BinaryExpression Mul(Expression l, Expression r) => Expression.Binary(BinaryOperator.Multiply, l, r);
+    private static BinaryExpression And(Expression l, Expression r) => Expression.Binary(BinaryOperator.And, l, r);
+    private static BinaryExpression Or(Expression l, Expression r) => Expression.Binary(BinaryOperator.Or, l, r);
 }
