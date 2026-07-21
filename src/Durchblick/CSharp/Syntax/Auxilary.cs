@@ -4,18 +4,6 @@ using Durchblick.Collections;
 
 public sealed record TypeReference(string Name, string? Namespace, ImmutableCollection<TypeReference> GenericArguments) : AstNode;
 
-// public static class BuiltInTypeNames
-// {
-//     public const string Bool = "bool";
-//     public const string Char = "char";
-//     public const string Double = "double";
-//     public const string Float = "float";
-//     public const string Int = "int";
-//     public const string Long = "long";
-//     public const string Null = "null";
-//     public const string String = "string";
-//     public const string Void = "void";
-// }
 
 public static class BuiltInTypeReferences
 {
@@ -63,17 +51,3 @@ public abstract record ExpressionOrBlock
 
 public sealed record ExprBody(Expression Value) : ExpressionOrBlock;
 public sealed record BlockBody(BlockStatement Block) : ExpressionOrBlock;
-
-
-public static class BuiltInTypeNames
-{
-    public const string Bool = "bool";
-    public const string Char = "char";
-    public const string Double = "double";
-    public const string Float = "float";
-    public const string Int = "int";
-    public const string Long = "long";
-    public const string Null = "null";
-    public const string String = "string";
-    public const string Void = "void";
-}

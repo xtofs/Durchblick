@@ -1,4 +1,4 @@
-namespace Durchblick.CSharp.Semantics;
+namespace Durchblick.CSharp.Syntax;
 
 static class BuiltInTypeNames
 {
