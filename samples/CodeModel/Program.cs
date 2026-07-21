@@ -38,7 +38,7 @@ internal class Program
 
         // 
         var f = new CodeFormatter(Console.Out);
-        f.Format(unit);
+        f.Format($"{unit}");
 
         // ///////////////////////////////////////////////////////
         // Bind the compilation unit and create the semantic model

@@ -46,4 +46,14 @@ public class Class1
             default: return -1;
         }
     }
+
+    // public int Calculate6(int a)
+    // {
+    //     var sum = 0;
+    //     foreach (var x in Enumerable.Range(0, a))
+    //     {
+    //         sum += x;
+    //     }
+    //     return sum;
+    // }
 }

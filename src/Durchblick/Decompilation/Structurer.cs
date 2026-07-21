@@ -291,6 +291,18 @@ internal sealed class Structurer
                     var left = stack.Pop();
                     stack.Push(Expression.Binary(Decompiler.BinaryOperators[instruction.ILOpCode], left, right));
                     break;
+                // case ILOpCode.Call:
+                //     var method = instruction.Operand.GetMethod();
+                //     var parameters = method.GetParameters();
+                //     var arguments = new Expression[parameters.Length];
+                //     for (i = parameters.Length - 1; i >= 0; i--)
+                //     {
+                //         arguments[i] = stack.Pop();
+                //     }
+                //     stack.Push(Expression.Call(null!, new SymbolReference(method.Name, SymbolKind.Method), arguments));
+                //     break;
+
+                // branching instructions
 
                 case ILOpCode.Br:
                 case ILOpCode.Br_s:

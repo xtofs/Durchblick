@@ -22,7 +22,7 @@ public abstract record Expression : AstNode
     public static ConditionalExpression Conditional(Expression condition, Expression thenExpr, Expression elseExpr)
         => new(condition, thenExpr, elseExpr);
 
-    public static CallExpression Call(Expression target, IEnumerable<Expression> args, SymbolReference method)
+    public static CallExpression Call(Expression target, SymbolReference method, IEnumerable<Expression> args)
         => new(target, [.. args], method);
 
     public static MemberAccessExpression Member(Expression target, string member, SymbolReference symbol)

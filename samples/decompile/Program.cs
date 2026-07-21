@@ -21,18 +21,8 @@ internal class Program
 
         var unit = Declaration.CompilationUnit([Declaration.Namespace(SpecimenNamespace, classes)]);
 
-        // The CodeFormatter is a work in progress: statements it does not handle yet throw
-        // NotImplementedException. Report that instead of crashing, so it is clear how far the
-        // reconstructed source rendered.
-        try
-        {
-            new CodeFormatter(Console.Out).Format(unit);
-        }
-        catch (NotImplementedException ex)
-        {
-            Console.WriteLine();
-            Console.WriteLine($"// formatter incomplete: {ex.Message}");
-        }
+        new CodeFormatter(Console.Out).Format($"{unit}");
+        Console.WriteLine();
     }
 
     private static TypeDecl BuildClass(Type type)

@@ -138,10 +138,10 @@ public readonly struct Operand
         return (string)_object!;
     }
 
-    public MethodBase GetMethod()
+    public MethodInfo GetMethod()
     {
         Require(OperandType.InlineMethod);
-        return (MethodBase)_object!;
+        return (MethodInfo)_object!;
     }
 
     public FieldInfo GetField()
