@@ -11,7 +11,7 @@ var rows = OpCode.Enumerate()
     .Select(opcode => new object[] {
         opcode.Opcode.Name!,
         opcode.Opcode.FlowControl, opcode.Opcode.OperandType,
-        opcode.Effect.PopCount, opcode.Effect.PushCount })
+        opcode.Effect.PopCount?.ToString() ?? "var", opcode.Effect.PushCount?.ToString() ?? "var" })
 // .OrderBy(row => row[1])
 ;
 Markdown.FormatAsTable(header, rows);
