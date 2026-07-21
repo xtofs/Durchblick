@@ -15,10 +15,10 @@ public class IndentedTextWriter(TextWriter innerWriter) : TextWriter
     public override Encoding Encoding => _innerWriter.Encoding;
 
     /// <summary>Control character (ASCII SO, Shift Out) embedded in the stream to increase indentation.</summary>
-    public const char Indent = (char)0x0E;
+    public const char Indent = '\x0E';
 
     /// <summary>Control character (ASCII SI, Shift In) embedded in the stream to decrease indentation.</summary>
-    public const char Dedent = (char)0x0F;
+    public const char Dedent = '\x0F'; // aka Outdent
 
     public override void Write(char value)
     {

@@ -36,7 +36,11 @@ public readonly struct CodeFormattingInterpolatedStringHandler
 
     private static DelimitedList<T> CurlyBraces<T>(ImmutableCollection<T> items)
     {
-        return Delimited(items, "\n{" + IndentedTextWriter.Indent + "\n", "\n", IndentedTextWriter.Dedent + "\n}", omitWhenEmpty: false);
+        // Use curly braces with indentation control characters.
+        // open = newline + brace + ident + newline
+        // close = newline + dedent + brace + newline
+        // separator = newline
+        return Delimited(items, "\n{\x0E\n", "\n", "\x0F\n}", omitWhenEmpty: false);
     }
 
     public readonly void AppendLiteral(string s)
@@ -245,7 +249,7 @@ public readonly struct CodeFormattingInterpolatedStringHandler
         {
             _formatter.Format($"case {switchCase.Pattern}:");
         }
-        _formatter.Format($"{Delimited(switchCase.Body, "\n" + IndentedTextWriter.Indent, "\n", IndentedTextWriter.Dedent.ToString(), true)}");
+        _formatter.Format($"{Delimited(switchCase.Body, "\n\x0E", "\n", "\x0F", true)}");
     }
 
     public readonly void AppendFormatted(CatchClause catchClause)
