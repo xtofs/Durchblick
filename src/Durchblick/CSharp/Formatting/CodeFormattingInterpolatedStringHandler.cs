@@ -283,15 +283,24 @@ public readonly struct CodeFormattingInterpolatedStringHandler
     {
         switch ((tref.Namespace, tref.Name))
         {
+            case ("System", "Boolean"): _formatter.Format($"bool"); break;
+            case ("System", "Byte"): _formatter.Format($"byte"); break;
+            case ("System", "SByte"): _formatter.Format($"sbyte"); break;
+            case ("System", "Char"): _formatter.Format($"char"); break;
+            case ("System", "Decimal"): _formatter.Format($"decimal"); break;
+            case ("System", "Double"): _formatter.Format($"double"); break;
+            case ("System", "Single"): _formatter.Format($"float"); break;
+            case ("System", "Int32"): _formatter.Format($"int"); break;
+            case ("System", "UInt32"): _formatter.Format($"uint"); break;
+            case ("System", "Int64"): _formatter.Format($"long"); break;
+            case ("System", "UInt64"): _formatter.Format($"ulong"); break;
+            case ("System", "Int16"): _formatter.Format($"short"); break;
+            case ("System", "UInt16"): _formatter.Format($"ushort"); break;
             case ("System", "Object"): _formatter.Format($"object"); break;
             case ("System", "String"): _formatter.Format($"string"); break;
-            case ("System", "Int32"): _formatter.Format($"int"); break;
-            case ("System", "Boolean"): _formatter.Format($"bool"); break;
+            case ("System", "Void"): _formatter.Format($"void"); break;
             default:
-
-                if (tref.Namespace is not null) { _formatter.Format($"{tref.Namespace}."); }
-                _formatter.Format($"{tref.Name}");
-                _formatter.Format($"{Delimited(tref.GenericArguments, "<", ", ", ">", true)}");
+                _formatter.Format($"{tref.Name}{Delimited(tref.GenericArguments, "<", ", ", ">", true)}");
                 break;
         }
     }

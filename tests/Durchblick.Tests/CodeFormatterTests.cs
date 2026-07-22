@@ -45,6 +45,18 @@ public class CodeFormatterTests
     public void Runtime_generic_type_reference_formats_generic_arguments()
         => Assert.Equal("IEnumerator<int>", Format(Declaration.TypeRef(typeof(IEnumerator<int>))));
 
+    [Fact]
+    public void Runtime_generic_type_reference_preserves_metadata_identity()
+    {
+        var typeReference = Declaration.TypeRef(typeof(IEnumerator<int>));
+
+        Assert.Equal("IEnumerator", typeReference.Name);
+        Assert.Equal("System.Collections.Generic", typeReference.Namespace);
+        var genericArgument = Assert.Single(typeReference.GenericArguments);
+        Assert.Equal("Int32", genericArgument.Name);
+        Assert.Equal("System", genericArgument.Namespace);
+    }
+
     private static string Format(Expression expression)
     {
         var writer = new StringWriter();

@@ -23,20 +23,11 @@ public abstract record Declaration : AstNode
         IEnumerable<TypeReference>? genericArguments = null)
         => new TypeReference(name, @namespace, [.. (genericArguments ?? [])]);
 
-    /// <summary>Maps a runtime <see cref="Type"/> to a type reference, using the C# keyword for built-in types.</summary>
+    /// <summary>Maps a runtime <see cref="Type"/> to a structured type reference.</summary>
     public static TypeReference TypeRef(Type type)
-        => TypeRef(FriendlyName(type), genericArguments: type.IsGenericType ? type.GetGenericArguments().Select(TypeRef) : null);
+        => TypeRef(MetadataTypeName(type), type.Namespace, type.IsGenericType ? type.GetGenericArguments().Select(TypeRef) : null);
 
-    private static string FriendlyName(Type type) =>
-        type == typeof(int) ? "int"
-        : type == typeof(long) ? "long"
-        : type == typeof(bool) ? "bool"
-        : type == typeof(double) ? "double"
-        : type == typeof(float) ? "float"
-        : type == typeof(string) ? "string"
-        : type == typeof(object) ? "object"
-        : type == typeof(void) ? "void"
-        : StripGenericArity(type.Name);
+    private static string MetadataTypeName(Type type) => StripGenericArity(type.Name);
 
     private static string StripGenericArity(string name)
     {

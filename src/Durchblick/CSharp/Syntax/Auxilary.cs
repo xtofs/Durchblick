@@ -7,10 +7,10 @@ public sealed record TypeReference(string Name, string? Namespace, ImmutableColl
 
 public static class BuiltInTypeReferences
 {
-    public static TypeReference Bool { get; } = Declaration.TypeRef("Bool", "System");
+    public static TypeReference Bool { get; } = Declaration.TypeRef("Boolean", "System");
     public static TypeReference Char { get; } = Declaration.TypeRef("Char", "System");
     public static TypeReference Double { get; } = Declaration.TypeRef("Double", "System");
-    public static TypeReference Float { get; } = Declaration.TypeRef("Float", "System");
+    public static TypeReference Float { get; } = Declaration.TypeRef("Single", "System");
     public static TypeReference Int { get; } = Declaration.TypeRef("Int32", "System");
     public static TypeReference Long { get; } = Declaration.TypeRef("Int64", "System");
     public static TypeReference String { get; } = Declaration.TypeRef("String", "System");
