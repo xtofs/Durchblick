@@ -108,6 +108,9 @@ internal sealed class SemanticModelBuilder
             CastExpression cast =>
                 BindCast(cast, scope, exprInfos, diagnostics),
 
+            IsInstanceExpression isInstance =>
+                BindIsInstance(isInstance, scope, exprInfos, diagnostics),
+
             CallExpression call =>
                 BindCall(call, scope, exprInfos, diagnostics),
 
@@ -364,6 +367,20 @@ internal sealed class SemanticModelBuilder
         var targetType = _types!.Resolve(cast.Type);
 
         return new CastInfo(cast, targetType, sourceType!);
+    }
+
+    private IsInstanceInfo BindIsInstance(
+        IsInstanceExpression isInstance,
+        Scope scope,
+        ImmutableDictionary<Expression, ExpressionInfo>.Builder exprInfos,
+        ImmutableArray<string>.Builder diagnostics)
+    {
+        var exprInfo = BindExpression(isInstance.Expression, scope, exprInfos, diagnostics);
+        exprInfos[isInstance.Expression] = exprInfo;
+        var sourceType = GetExpressionType(exprInfo);
+        var targetType = _types!.Resolve(isInstance.Type);
+
+        return new IsInstanceInfo(isInstance, targetType, sourceType!);
     }
     private CallInfo BindCall(
         CallExpression call,
@@ -868,6 +885,7 @@ internal sealed class SemanticModelBuilder
             BinaryInfo bin => bin.ResultType,
             UnaryInfo un => un.ResultType,
             CastInfo cast => cast.TargetType,
+            IsInstanceInfo isInstance => isInstance.TargetType,
             CallInfo call => call.ReturnType,
             MemberAccessInfo ma => ma.Type,
             ObjectCreationInfo oc => oc.Type,

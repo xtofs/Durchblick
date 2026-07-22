@@ -34,6 +34,7 @@ internal static class Precedence
         ConditionalExpression => Conditional,
         AssignExpression => Assignment,
         UnaryExpression or CastExpression or AwaitExpression => Unary,
+        IsInstanceExpression => Primary,
         _ => Primary,
     };
 }

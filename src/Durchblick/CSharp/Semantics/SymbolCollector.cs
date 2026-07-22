@@ -377,6 +377,11 @@ internal sealed class SymbolCollector
                 BindExpression(castExpression.Expression, scope, typeResolver, diagnostics);
                 break;
 
+            case IsInstanceExpression isInstanceExpression:
+                BindExpression(isInstanceExpression.Expression, scope, typeResolver, diagnostics);
+                _ = ResolveType(isInstanceExpression.Type, typeResolver, diagnostics);
+                break;
+
             case AwaitExpression awaitExpression:
                 BindExpression(awaitExpression.Expression, scope, typeResolver, diagnostics);
                 break;

@@ -150,6 +150,16 @@ public readonly struct Operand
         return (ConstructorInfo)_object!;
     }
 
+    public MethodBase? GetMethodBase()
+    {
+        Require(OperandType.InlineMethod);
+        if (_object is MethodBase mb)
+        {
+            return mb;
+        }
+        return null;
+    }
+
     public FieldInfo GetField()
     {
         Require(OperandType.InlineField);
@@ -190,7 +200,7 @@ public readonly struct Operand
         OperandType.InlineBrTarget or OperandType.ShortInlineBrTarget => $"IL_{GetBranchTarget():X4}",
         OperandType.InlineSwitch => string.Join(", ", GetSwitchTargets().Select(t => $"IL_{t:X4}")),
         OperandType.InlineString => $"\"{GetString()}\"",
-        OperandType.InlineMethod => GetMethod().ToString() ?? "",
+        OperandType.InlineMethod => GetMethodBase()?.ToString() ?? "",
         OperandType.InlineField => GetField().ToString() ?? "",
         OperandType.InlineType => GetTypeOperand().ToString(),
         OperandType.InlineTok => GetMember().ToString() ?? "",

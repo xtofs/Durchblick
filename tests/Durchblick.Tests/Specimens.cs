@@ -104,4 +104,14 @@ public class Class1
     {
         _mutableField = value;
     }
+
+    public string? Calculate14(object value)
+    {
+        return value as string;
+    }
+
+    public void Calculate15()
+    {
+        throw new InvalidOperationException();
+    }
 }

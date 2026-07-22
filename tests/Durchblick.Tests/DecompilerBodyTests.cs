@@ -1,8 +1,10 @@
 namespace Durchblick.Tests;
 
 using System.Reflection;
+using System.Reflection.Metadata;
 using Durchblick.CSharp.Syntax;
 using Durchblick.Decompilation;
+using Durchblick.IL;
 
 /// <summary>
 /// Golden tests for structured method-body reconstruction (control-flow recovery): a two-way
@@ -173,5 +175,29 @@ public class DecompilerBodyTests
         Assert.Equal("_mutableField", target.MemberName);
         Assert.IsType<IdentifierExpression>(assignment.Value);
         Assert.Contains(body.Statements, statement => statement is ReturnStatement);
+    }
+
+    [Theory]
+    [Specimen("specimen.Class1", "Calculate14")]
+    public void Reconstructs_isinst_as_type_safe_conversion(MethodInfo method)
+    {
+        var body = Decompiler.DecompileBody(method);
+
+        var declaration = body.Statements.OfType<VariableDeclarationStatement>().Single();
+        var conversion = Assert.IsType<IsInstanceExpression>(declaration.Declaration.Initializer);
+        Assert.Equal("String", conversion.Type.Name);
+        Assert.Equal("System", conversion.Type.Namespace);
+        Assert.IsType<IdentifierExpression>(conversion.Expression);
+        Assert.Contains(body.Statements, statement => statement is ReturnStatement);
+    }
+
+    [Theory]
+    [Specimen("specimen.Class1", "Calculate15")]
+    public void Unsupported_instruction_exception_includes_block_instructions(MethodInfo method)
+    {
+        var exception = Assert.Throws<UnsupportedInstructionException>(() => Decompiler.DecompileBody(method));
+
+        Assert.Equal(ILOpCode.Throw, exception.Instruction.ILOpCode);
+        Assert.Contains(exception.BlockInstructions, instruction => instruction.ILOpCode == ILOpCode.Throw);
     }
 }

@@ -229,6 +229,7 @@ internal static class LocalDeclarations
             || creation.Initializer.Any(initializer => Mentions(initializer.Value, name)),
         TupleExpression tuple => tuple.Elements.Any(element => Mentions(element, name)),
         CastExpression cast => Mentions(cast.Expression, name),
+        IsInstanceExpression isInstance => Mentions(isInstance.Expression, name),
         AwaitExpression @await => Mentions(@await.Expression, name),
         AssignExpression assignment => Mentions(assignment.Target, name) || Mentions(assignment.Value, name),
         LambdaExpression lambda => lambda.Body switch

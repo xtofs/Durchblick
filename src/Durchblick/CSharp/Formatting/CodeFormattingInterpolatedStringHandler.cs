@@ -484,6 +484,11 @@ public readonly struct CodeFormattingInterpolatedStringHandler
         _formatter.Format($"({expression.Type}){Inner(expression.Expression, Precedence.Unary)}");
     }
 
+    public readonly void AppendFormatted(IsInstanceExpression expression)
+    {
+        _formatter.Format($"isinst<{expression.Type}>({expression.Expression})");
+    }
+
     public readonly void AppendFormatted(AwaitExpression expression)
     {
         _formatter.Format($"await {Inner(expression.Expression, Precedence.Unary)}");
@@ -539,6 +544,9 @@ public readonly struct CodeFormattingInterpolatedStringHandler
                 break;
             case CastExpression ce:
                 AppendFormatted(ce);
+                break;
+            case IsInstanceExpression iie:
+                AppendFormatted(iie);
                 break;
             case AwaitExpression ae:
                 AppendFormatted(ae);

@@ -38,6 +38,12 @@ public sealed record CastInfo(
     TypeSymbol SourceType
 ) : ExpressionInfo(Expression);
 
+public sealed record IsInstanceInfo(
+    IsInstanceExpression Expression,
+    TypeSymbol TargetType,
+    TypeSymbol SourceType
+) : ExpressionInfo(Expression);
+
 public sealed record BinaryInfo(
     BinaryExpression Expression,
     TypeSymbol LeftType,

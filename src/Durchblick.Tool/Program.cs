@@ -99,6 +99,16 @@ internal static class Program
         {
             return BuildMethod(method);
         }
+        catch (UnsupportedInstructionException ex)
+        {
+            Console.Error.WriteLine($"Skipping {method.DeclaringType?.FullName}.{method.Name} {ex.Message}");
+            foreach (var instruction in ex.BlockInstructions)
+            {
+                Console.Error.WriteLine($"  {instruction}");
+            }
+
+            return null;
+        }
         catch (NotSupportedException ex)
         {
             Console.Error.WriteLine($"Skipping {method.DeclaringType?.FullName}.{method.Name} {ex.Message}");

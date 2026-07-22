@@ -53,6 +53,8 @@ internal sealed class Structurer
 
         var structurer = new Structurer(graph, method);
         var body = Statement.Block(structurer.StructureRegion(start: 0, stop: NoStop));
+        // TODO: Add a post-processing pass that lowers isinst patterns to the best C# form:
+        // `x is T`, `x as T`, or `x is T t`, depending on the surrounding null checks and stores.
         return LocalDeclarations.Insert(body, structurer._locals);
     }
 
@@ -71,6 +73,7 @@ internal sealed class Structurer
             }
 
             var block = _graph.Blocks[current];
+
             var sim = SimulateBlock(block);
             statements.AddRange(sim.Statements);
 
@@ -311,6 +314,10 @@ internal sealed class Structurer
                     stack.Push(Expression.Identifier(staticField.Name, new SymbolReference(staticField.Name, SymbolKind.Field)));
                     break;
 
+                case ILOpCode.Isinst:
+                    stack.Push(Expression.IsInstance(stack.Pop(), Declaration.TypeRef(instruction.Operand.GetTypeOperand())));
+                    break;
+
 
                 case ILOpCode.Add:
                 case ILOpCode.Sub:
@@ -364,11 +371,24 @@ internal sealed class Structurer
                     return new BlockSim(statements, ExitKind.Return, stack.Count > 0 ? stack.Pop() : null, false);
 
                 default:
-                    throw new NotSupportedException($"Unsupported IL opcode for body reconstruction at IL_{instruction.Offset:X4}: {instruction.OpCode}.");
+                    throw Unsupported(instruction, block);
             }
         }
 
         return new BlockSim(statements, ExitKind.FallThrough, null, false);
+    }
+
+    private UnsupportedInstructionException Unsupported(Instruction instruction, BasicBlock block)
+    {
+        var blockInstructions = _graph.Instructions
+            .Skip(block.StartIndex)
+            .Take(block.EndIndex - block.StartIndex + 1)
+            .ToArray();
+
+        return new UnsupportedInstructionException(
+            $"Unsupported IL opcode for body reconstruction at IL_{instruction.Offset:X4}: {instruction.OpCode}.",
+            instruction,
+            blockInstructions);
     }
 
     private static void PushCallExpression(Stack<Expression> stack, MethodInfo method)

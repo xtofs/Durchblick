@@ -43,6 +43,9 @@ public abstract record Expression : AstNode
     public static CastExpression Cast(TypeReference type, Expression expr)
         => new(type, expr);
 
+    public static IsInstanceExpression IsInstance(Expression expr, TypeReference type)
+        => new(expr, type);
+
     public static AwaitExpression Await(Expression expr)
         => new(expr);
 
@@ -62,6 +65,7 @@ public sealed record ObjectCreationExpression(TypeReference Type, ImmutableColle
 public sealed record LambdaExpression(ImmutableCollection<Parameter> Parameters, ExpressionOrBlock Body, SymbolReference Symbol) : Expression;
 public sealed record TupleExpression(ImmutableCollection<Expression> Elements) : Expression;
 public sealed record CastExpression(TypeReference Type, Expression Expression) : Expression;
+public sealed record IsInstanceExpression(Expression Expression, TypeReference Type) : Expression;
 public sealed record AwaitExpression(Expression Expression) : Expression;
 public sealed record Parameter(string Name, TypeReference Type) : Expression;
 
