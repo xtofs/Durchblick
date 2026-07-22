@@ -259,8 +259,8 @@ branch normalization, clean reification layer. **Build on it; don't touch it.**
   leaders. Blocks try/catch/finally, `using`, `foreach`, async, and makes CFG construction
   technically incomplete.
 - **C5 — No symbol/name recovery integration.** `Durchblick.Metadata` reads PDB local names
-  but nothing consumes them; locals are named via `LocalVariableInfo.ToString()`. Design how
-  PDB names flow into the AST.
+  but nothing consumes them; locals are named `local0`, `local1`, … after their IL slot index.
+  Design how PDB names flow into the AST.
 - **C6 — No real pretty-printer.** `CodeFormatter` renders the AST but precedence-aware
   minimal parenthesization and idiomatic output are unstarted. The disassemble demo has a
   small local expression renderer for the current syntax-expression subset.
@@ -314,10 +314,23 @@ Ordered by dependency. Each phase is independently verifiable.
 3b (statement-producing block simulation) ✅; 3c `if`/`else` (`Calculate3`) ✅, `while`
 (`Calculate4`, canonical `while(true){ …; if(!cond) break; … }` for debug loops) ✅, and `switch`
 (`Calculate5`, jump table → `SwitchStatement` with constant cases + `default`) ✅; 3d
-(`AssignExpression`, plus a `DiscardPattern` for `default`) ✅. `Decompiler.DecompileBody` is the
-entry point; golden tests in `DecompilerBodyTests.cs`. Output still carries the compiler's debug
-temps (temp-inlining is a deferred simplification pass) and is verified on AST shape (no body text
-formatter yet — Phase 6).
+(`AssignExpression`, plus a `DiscardPattern` for `default`) ✅; 3e (local declarations,
+`LocalDeclarations.cs`) ✅. `Decompiler.DecompileBody` is the entry point; golden tests in
+`DecompilerBodyTests.cs` and `LocalDeclarationTests.cs`. Output still carries the compiler's debug
+temps (temp-inlining is a deferred simplification pass).
+
+3e. **Local declarations** — `LocalDeclarations.Insert` runs on the structured body before it
+leaves `Structurer`. Every `stloc` starts life as a bare `AssignExpression`; this pass declares
+each local in the innermost statement list containing *all* of its occurrences, merging the first
+assignment into the declaration (`int c = a + b;`) when the value does not read the local itself,
+and otherwise inserting a bare `int accu;` ahead of the first use. The declared type comes from
+`LocalVariableInfo.LocalType` via `Decompiler.CreateLocalSlots` → `LocalSlot`; the scope rule is
+what keeps a local assigned in both arms of an `if` (or written before a loop and read inside it)
+from being declared in a branch that does not dominate its uses. Known limitation: a local whose
+occurrences are confined to a loop body but whose value crosses iterations gets an uninitialized
+declaration inside the loop, which does not compile — that needs value-flow analysis. Names stay
+`local0`, `local1`, … until PDB symbols land (Phase 4, C5). This deliberately does *not* live in
+the formatter: by then the IL type is gone and a streaming printer cannot see all occurrences.
 
 Target: `Calculate3` → a real `if`; a new loop specimen → a `while`; a new compiled `switch`
 specimen → a `SwitchStatement`. All output goes into existing `Durchblick.CSharp.Syntax`
@@ -386,10 +399,11 @@ opportunistically but is not on the critical path for the arithmetic/branch spec
 
 - Build: `dotnet build Durchblick.slnx`
 - Tests: `dotnet test`
-- Demo: `dotnet run --project samples/disassemble` (compiles `specimens/add`, dumps blocks
-  and supported straight-line expressions);
-  `dotnet run --project samples/CodeModelDemo`
-  (builds and formats an AST, binds it, reports semantic info).
+- Demos: `dotnet run --project samples/disassemble` (dumps blocks, CFG edges, and supported
+  straight-line expressions for its own specimen methods);
+  `dotnet run --project samples/decompile` (reconstructs and prints those specimens as C#);
+  `dotnet run --project samples/CodeModel` (builds and formats an AST, binds it, reports
+  semantic info).
 - End-to-end target per phase: compile a specimen with the C# compiler, decompile it, and
   assert the reconstructed structure (Phase 1: block/edge shape; Phase 3: `if`/loop
   presence; Phase 6: emitted C# source) against a golden expectation.

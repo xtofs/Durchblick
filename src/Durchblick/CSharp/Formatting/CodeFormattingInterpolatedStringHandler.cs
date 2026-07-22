@@ -751,8 +751,6 @@ public readonly struct CodeFormattingInterpolatedStringHandler
                 _formatter.Format($"{Delimited(declaration.Parameters, "(", ", ", ")", omitWhenEmpty: false)}");
                 if (declaration.Body is not null)
                 {
-                    var locals = GetLocalDeclarations(declaration.Body);
-                    _formatter.Format($"// {string.Join(", ", locals)}");
                     _formatter.Format($"{declaration.Body}");
                 }
                 else
@@ -778,21 +776,6 @@ public readonly struct CodeFormattingInterpolatedStringHandler
             default:
                 _formatter.Format($"{declaration.TypeReference} {declaration.Name};");
                 break;
-        }
-    }
-
-    private HashSet<string> GetLocalDeclarations(Statement body)
-    {
-        switch (body)
-        {
-            case ExpressionStatement es:
-                return es.Expression is AssignExpression ae && ae.Target is IdentifierExpression ie ? [ie.Name] : [];
-            case BlockStatement bs:
-                return [.. bs.Statements.SelectMany(GetLocalDeclarations)];
-            case WhileStatement ws:
-                return GetLocalDeclarations(ws.Body);
-            default:
-                return [];
         }
     }
 

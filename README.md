@@ -19,7 +19,7 @@ architecture, background, and the full gap analysis and phased plan.
 | Control-flow graph construction       | ⚠️ Prototype; leaders, successor edges, switch edges, and exits work    |
 | CFG analyses                          | ⚠️ Dominators, post-dominators, and natural loops exist                 |
 | Stack simulation → syntax expression  | ⚠️ Straight-line prototype for arguments, locals, constants, binaries   |
-| Structured method-body reconstruction | ⚠️ Limited `if`/`else`, `while`, `switch`, assignments, and returns     |
+| Structured method-body reconstruction | ⚠️ Limited `if`/`else`, `while`, `switch`, local declarations, returns  |
 | C# syntax model + formatter           | ⚠️ Model exists; formatter prints ASTs with expression precedence tests |
 | Semantic binding                      | ⚠️ Exists; role in decompilation is not defined yet                     |
 | Metadata / PDB symbols                | ⚠️ Spike exists; not integrated into the main pipeline                  |

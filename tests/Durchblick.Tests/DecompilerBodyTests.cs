@@ -74,7 +74,7 @@ public class DecompilerBodyTests
 
         var whileStatement = body.Statements.OfType<WhileStatement>().Single();
         var loopBody = Assert.IsType<BlockStatement>(whileStatement.Body);
-        Assert.Contains(loopBody.Statements, statement => statement is ExpressionStatement { Expression: AssignExpression { Value: CallExpression } });
+        Assert.Contains(loopBody.Statements, statement => statement is VariableDeclarationStatement { Declaration.Initializer: CallExpression });
         Assert.Contains(loopBody.Statements, statement => statement is IfStatement);
         Assert.Contains(body.Statements, statement => statement is ReturnStatement);
     }

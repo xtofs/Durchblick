@@ -197,6 +197,10 @@ public static class Decompiler
     }
 
     internal static Expression[] CreateLocalExpressions(MethodInfo methodInfo)
+        => [.. CreateLocalSlots(methodInfo).Select(slot => slot.Reference)];
+
+    /// <summary>Reads the method's local variable slots, keeping the declared type for later declaration insertion.</summary>
+    internal static LocalSlot[] CreateLocalSlots(MethodInfo methodInfo)
     {
         var body = methodInfo.GetMethodBody();
         if (body is null)
@@ -207,7 +211,8 @@ public static class Decompiler
         return [.. body.LocalVariables.Select(local =>
         {
             var name = $"local{local.LocalIndex}";
-            return Expression.Identifier(name, new SymbolReference(name, SymbolKind.Local));
+            var reference = Expression.Identifier(name, new SymbolReference(name, SymbolKind.Local));
+            return new LocalSlot(name, Declaration.TypeRef(local.LocalType), reference);
         })];
     }
 

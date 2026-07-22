@@ -23,6 +23,20 @@ public abstract record Declaration : AstNode
         IEnumerable<TypeReference>? genericArguments = null)
         => new TypeReference(name, @namespace, [.. (genericArguments ?? [])]);
 
+    /// <summary>Maps a runtime <see cref="Type"/> to a type reference, using the C# keyword for built-in types.</summary>
+    public static TypeReference TypeRef(Type type) => TypeRef(FriendlyName(type));
+
+    private static string FriendlyName(Type type) =>
+        type == typeof(int) ? "int"
+        : type == typeof(long) ? "long"
+        : type == typeof(bool) ? "bool"
+        : type == typeof(double) ? "double"
+        : type == typeof(float) ? "float"
+        : type == typeof(string) ? "string"
+        : type == typeof(object) ? "object"
+        : type == typeof(void) ? "void"
+        : type.Name;
+
     public static TypeDecl Type(
         TypeKind kind,
         string name,

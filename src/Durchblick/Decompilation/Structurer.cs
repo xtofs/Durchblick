@@ -32,7 +32,7 @@ internal sealed class Structurer
     private readonly PostDominatorTree _postDominators;
     private readonly IReadOnlyDictionary<int, NaturalLoop> _loopsByHeader;
     private readonly Expression[] _arguments;
-    private readonly Expression[] _locals;
+    private readonly LocalSlot[] _locals;
 
     private Structurer(ControlFlowGraph graph, MethodInfo method)
     {
@@ -41,7 +41,7 @@ internal sealed class Structurer
         _postDominators = PostDominatorTree.Build(graph);
         _loopsByHeader = LoopAnalysis.Find(graph, _dominators).ToDictionary(loop => loop.Header);
         _arguments = Decompiler.CreateArgumentExpressions(method);
-        _locals = Decompiler.CreateLocalExpressions(method);
+        _locals = Decompiler.CreateLocalSlots(method);
     }
 
     public static BlockStatement Structure(ControlFlowGraph graph, MethodInfo method)
@@ -52,7 +52,8 @@ internal sealed class Structurer
         }
 
         var structurer = new Structurer(graph, method);
-        return Statement.Block(structurer.StructureRegion(start: 0, stop: NoStop));
+        var body = Statement.Block(structurer.StructureRegion(start: 0, stop: NoStop));
+        return LocalDeclarations.Insert(body, structurer._locals);
     }
 
     /// <summary>Emits the statements for the region entered at <paramref name="start"/>, stopping when control reaches <paramref name="stop"/> (exclusive).</summary>
@@ -228,37 +229,37 @@ internal sealed class Structurer
                     break;
 
                 case ILOpCode.Ldloc_0:
-                    stack.Push(_locals[0]);
+                    stack.Push(_locals[0].Reference);
                     break;
                 case ILOpCode.Ldloc_1:
-                    stack.Push(_locals[1]);
+                    stack.Push(_locals[1].Reference);
                     break;
                 case ILOpCode.Ldloc_2:
-                    stack.Push(_locals[2]);
+                    stack.Push(_locals[2].Reference);
                     break;
                 case ILOpCode.Ldloc_3:
-                    stack.Push(_locals[3]);
+                    stack.Push(_locals[3].Reference);
                     break;
                 case ILOpCode.Ldloc:
                 case ILOpCode.Ldloc_s:
-                    stack.Push(_locals[instruction.Operand.GetVariableIndex()]);
+                    stack.Push(_locals[instruction.Operand.GetVariableIndex()].Reference);
                     break;
 
                 case ILOpCode.Stloc_0:
-                    statements.Add(Statement.Expr(Expression.Assign(_locals[0], stack.Pop())));
+                    statements.Add(Statement.Expr(Expression.Assign(_locals[0].Reference, stack.Pop())));
                     break;
                 case ILOpCode.Stloc_1:
-                    statements.Add(Statement.Expr(Expression.Assign(_locals[1], stack.Pop())));
+                    statements.Add(Statement.Expr(Expression.Assign(_locals[1].Reference, stack.Pop())));
                     break;
                 case ILOpCode.Stloc_2:
-                    statements.Add(Statement.Expr(Expression.Assign(_locals[2], stack.Pop())));
+                    statements.Add(Statement.Expr(Expression.Assign(_locals[2].Reference, stack.Pop())));
                     break;
                 case ILOpCode.Stloc_3:
-                    statements.Add(Statement.Expr(Expression.Assign(_locals[3], stack.Pop())));
+                    statements.Add(Statement.Expr(Expression.Assign(_locals[3].Reference, stack.Pop())));
                     break;
                 case ILOpCode.Stloc:
                 case ILOpCode.Stloc_s:
-                    statements.Add(Statement.Expr(Expression.Assign(_locals[instruction.Operand.GetVariableIndex()], stack.Pop())));
+                    statements.Add(Statement.Expr(Expression.Assign(_locals[instruction.Operand.GetVariableIndex()].Reference, stack.Pop())));
                     break;
 
                 case ILOpCode.Ldc_i4_m1:

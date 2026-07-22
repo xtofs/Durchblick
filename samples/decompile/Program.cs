@@ -46,15 +46,5 @@ internal class Program
             modifiers);
     }
 
-    private static TypeReference TypeRef(Type type) => Declaration.TypeRef(FriendlyName(type));
-
-    private static string FriendlyName(Type type) =>
-        type == typeof(int) ? "int"
-        : type == typeof(long) ? "long"
-        : type == typeof(bool) ? "bool"
-        : type == typeof(double) ? "double"
-        : type == typeof(float) ? "float"
-        : type == typeof(string) ? "string"
-        : type == typeof(void) ? "void"
-        : type.Name;
+    private static TypeReference TypeRef(Type type) => Declaration.TypeRef(type);
 }
