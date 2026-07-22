@@ -394,11 +394,7 @@ internal sealed class Structurer
     private static void PushCallExpression(Stack<Expression> stack, MethodInfo method)
     {
         var parameters = method.GetParameters();
-        var arguments = new Expression[parameters.Length];
-        for (var parameterIndex = parameters.Length - 1; parameterIndex >= 0; parameterIndex--)
-        {
-            arguments[parameterIndex] = stack.Pop();
-        }
+        var arguments = PopArguments(stack, parameters);
 
         if (arguments.Length == 0 && TryGetGetterProperty(method, out var property))
         {
@@ -419,13 +415,38 @@ internal sealed class Structurer
     private static void PushObjectCreationExpression(Stack<Expression> stack, ConstructorInfo constructor)
     {
         var parameters = constructor.GetParameters();
+        var arguments = PopArguments(stack, parameters);
+
+        stack.Push(Expression.New(Declaration.TypeRef(constructor.DeclaringType!), arguments, []));
+    }
+
+    private static Expression[] PopArguments(Stack<Expression> stack, ParameterInfo[] parameters)
+    {
         var arguments = new Expression[parameters.Length];
         for (var parameterIndex = parameters.Length - 1; parameterIndex >= 0; parameterIndex--)
         {
-            arguments[parameterIndex] = stack.Pop();
+            arguments[parameterIndex] = CoerceArgument(stack.Pop(), parameters[parameterIndex].ParameterType);
         }
 
-        stack.Push(Expression.New(Declaration.TypeRef(constructor.DeclaringType!), arguments, []));
+        return arguments;
+    }
+
+    private static Expression CoerceArgument(Expression argument, Type parameterType)
+    {
+        if (argument is LiteralExpression { Value: int value })
+        {
+            if (parameterType == typeof(char) && value >= char.MinValue && value <= char.MaxValue)
+            {
+                return Expression.Literal((char)value, BuiltInTypeReferences.Char);
+            }
+
+            if (parameterType == typeof(bool))
+            {
+                return Expression.Literal(value != 0, BuiltInTypeReferences.Bool);
+            }
+        }
+
+        return argument;
     }
 
     private static bool TryGetGetterProperty(MethodInfo method, out PropertyInfo property)

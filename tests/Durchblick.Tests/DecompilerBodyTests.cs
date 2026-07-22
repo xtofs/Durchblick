@@ -200,4 +200,17 @@ public class DecompilerBodyTests
         Assert.Equal(ILOpCode.Throw, exception.Instruction.ILOpCode);
         Assert.Contains(exception.BlockInstructions, instruction => instruction.ILOpCode == ILOpCode.Throw);
     }
+
+    [Theory]
+    [Specimen("specimen.Class1", "Calculate16")]
+    public void Coerces_int32_literal_to_char_call_argument(MethodInfo method)
+    {
+        var body = Decompiler.DecompileBody(method);
+
+        var statement = body.Statements.OfType<ExpressionStatement>().Single();
+        var call = Assert.IsType<CallExpression>(statement.Expression);
+        var argument = Assert.IsType<LiteralExpression>(Assert.Single(call.Arguments));
+        Assert.Equal('}', argument.Value);
+        Assert.Equal(BuiltInTypeReferences.Char, argument.Type);
+    }
 }

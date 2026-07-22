@@ -403,11 +403,30 @@ public readonly struct CodeFormattingInterpolatedStringHandler
             case bool b:
                 _formatter.Format($"{(b ? "true" : "false")}");
                 break;
+            case char c:
+                _formatter.Format($"'{EscapeChar(c)}'");
+                break;
             default:
                 _formatter.Format($"{expression.Value.ToString()}");
                 break;
         }
     }
+
+    private static string EscapeChar(char value) => value switch
+    {
+        '\'' => "\\'",
+        '\\' => "\\\\",
+        '\0' => "\\0",
+        '\a' => "\\a",
+        '\b' => "\\b",
+        '\f' => "\\f",
+        '\n' => "\\n",
+        '\r' => "\\r",
+        '\t' => "\\t",
+        '\v' => "\\v",
+        _ when char.IsControl(value) => $"\\u{(int)value:X4}",
+        _ => value.ToString(),
+    };
 
     public readonly void AppendFormatted(IdentifierExpression expression)
     {

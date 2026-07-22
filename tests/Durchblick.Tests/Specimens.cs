@@ -114,4 +114,9 @@ public class Class1
     {
         throw new InvalidOperationException();
     }
+
+    public void Calculate16(System.Text.StringBuilder builder)
+    {
+        builder.Append('}');
+    }
 }

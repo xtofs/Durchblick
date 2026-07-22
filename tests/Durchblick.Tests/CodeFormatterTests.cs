@@ -57,6 +57,14 @@ public class CodeFormatterTests
         Assert.Equal("System", genericArgument.Namespace);
     }
 
+    [Fact]
+    public void Char_literal_formats_as_csharp_char_literal()
+        => Assert.Equal("'}'", Format(Expression.Literal('}', BuiltInTypeReferences.Char)));
+
+    [Fact]
+    public void Char_literal_escapes_single_quote()
+        => Assert.Equal("'\\''", Format(Expression.Literal('\'', BuiltInTypeReferences.Char)));
+
     private static string Format(Expression expression)
     {
         var writer = new StringWriter();

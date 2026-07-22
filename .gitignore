@@ -480,8 +480,7 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
-d.txt
-out.txt
-spike.decompiled.cs
-.gitignore
-spike.errors.txt
+
+
+
+out/**.*
