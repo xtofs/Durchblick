@@ -18,16 +18,16 @@ public readonly struct CodeFormattingInterpolatedStringHandler
         _formatter = formatter;
     }
 
-    private readonly record struct SeparatedList<T>(ImmutableCollection<T> Items, string Separator);
+    // private readonly record struct SeparatedList<T>(ImmutableCollection<T> Items, string Separator);
 
     private readonly record struct DelimitedList<T>(ImmutableCollection<T> Items, string Open, string Separator, string Close, bool OmitWhenEmpty);
 
-    /// <summary>
-    /// Creates a new separated list with the specified items and separator.
-    /// </summary>
-    [Obsolete("Use Delimited with empty open and close delimiters instead.")]
-    private static SeparatedList<T> Separated<T>(ImmutableCollection<T> items, string separator)
-        => new(items, separator);
+    // /// <summary>
+    // /// Creates a new separated list with the specified items and separator.
+    // /// </summary>
+    // [Obsolete("Use Delimited with empty open and close delimiters instead.")]
+    // private static SeparatedList<T> Separated<T>(ImmutableCollection<T> items, string separator)
+    //     => new(items, separator);
 
     /// <summary>
     /// Creates a new delimited list with the specified items, open and close delimiters, separator, and an option to omit when empty.
@@ -35,48 +35,16 @@ public readonly struct CodeFormattingInterpolatedStringHandler
     private static DelimitedList<T> Delimited<T>(ImmutableCollection<T> items, string open, string separator, string close, bool omitWhenEmpty = false)
         => new(items, open, separator, close, omitWhenEmpty);
 
+    /// <summary>
+    /// Creates a list of items, inside curly braces with proper indentation.
+    /// </summary>
     private static DelimitedList<T> CurlyBraces<T>(ImmutableCollection<T> items)
     {
         // Use curly braces with indentation control characters.
         // open = newline + brace + ident + newline
         // close = newline + dedent + brace + newline
         // separator = newline
-        return Delimited(items, "\n{\x0E\n", "\n", "\x0F\n}", omitWhenEmpty: false);
-    }
-
-    /// <summary>C# operator precedence levels (higher binds tighter). Only expression operators matter.</summary>
-    private static class Precedence
-    {
-        public const int Primary = 12;        // literal, identifier, call, member/index access, new, tuple
-        public const int Unary = 11;          // unary operator, cast, await
-        public const int Multiplicative = 10; // Multiply, Divide
-        public const int Additive = 9;        // Add, Subtract
-        public const int Relational = 8;      // Less, Greater
-        public const int Equality = 7;        // Equals, NotEquals
-        public const int LogicalAnd = 6;      // And (&&)
-        public const int LogicalOr = 5;       // Or (||)
-        public const int Conditional = 3;     // ?:
-        public const int Assignment = 2;      // =
-
-        public static int Of(BinaryOperator op) => op switch
-        {
-            BinaryOperator.Multiply or BinaryOperator.Divide => Multiplicative,
-            BinaryOperator.Add or BinaryOperator.Subtract => Additive,
-            BinaryOperator.Less or BinaryOperator.Greater => Relational,
-            BinaryOperator.Equals or BinaryOperator.NotEquals => Equality,
-            BinaryOperator.And => LogicalAnd,
-            BinaryOperator.Or => LogicalOr,
-            _ => Additive,
-        };
-
-        public static int Of(Expression e) => e switch
-        {
-            BinaryExpression b => Of(b.Operator),
-            ConditionalExpression => Conditional,
-            AssignExpression => Assignment,
-            UnaryExpression or CastExpression or AwaitExpression => Unary,
-            _ => Primary,
-        };
+        return Delimited(items, "\n{\x0E\n", "\n\n", "\x0F\n}", omitWhenEmpty: false);
     }
 
     /// <summary>
@@ -183,8 +151,28 @@ public readonly struct CodeFormattingInterpolatedStringHandler
         }
     }
 
-    private readonly void AppendFormatted<T>(SeparatedList<T> list)
+    // private readonly void AppendFormatted<T>(SeparatedList<T> list)
+    // {
+    //     for (var i = 0; i < list.Items.Count; i++)
+    //     {
+    //         if (i > 0)
+    //         {
+    //             _formatter.writer.Write(list.Separator);
+    //         }
+
+    //         _formatter.Format($"{list.Items[i]}");
+    //     }
+    // }
+
+    private readonly void AppendFormatted<T>(DelimitedList<T> list)
     {
+        // Skip formatting if the list is empty and parenthesis should be omitted.
+        if (list.OmitWhenEmpty && list.Items.Count == 0)
+        {
+            return;
+        }
+
+        _formatter.writer.Write(list.Open);
         for (var i = 0; i < list.Items.Count; i++)
         {
             if (i > 0)
@@ -194,17 +182,6 @@ public readonly struct CodeFormattingInterpolatedStringHandler
 
             _formatter.Format($"{list.Items[i]}");
         }
-    }
-
-    private readonly void AppendFormatted<T>(DelimitedList<T> list)
-    {
-        if (list.OmitWhenEmpty && list.Items.Count == 0)
-        {
-            return;
-        }
-
-        _formatter.writer.Write(list.Open);
-        _formatter.Format($"{Separated(list.Items, list.Separator)}");
         _formatter.writer.Write(list.Close);
     }
 
@@ -598,7 +575,7 @@ public readonly struct CodeFormattingInterpolatedStringHandler
     public readonly void AppendFormatted(ForStatement statement)
     {
         _formatter.writer.Write("for (");
-        // _formatter.Format($"{Separated(statement.Initializer, " ")}");
+        // _formatter.Format($"{Delimited(statement.Initializer, "", " ")}");
         _formatter.Format($"{Delimited(statement.Initializer, "", " ", " ")}");
         // _formatter.writer.Write(" ");
         // if (statement.Condition is not null)
@@ -607,7 +584,6 @@ public readonly struct CodeFormattingInterpolatedStringHandler
         // }
 
         _formatter.writer.Write("; ");
-        // _formatter.Format($"{Separated(statement.Iterator, " ")}");
         _formatter.Format($"{Delimited(statement.Iterator, "", " ", "")}");
         _formatter.Format($") {statement.Body}");
     }
@@ -704,7 +680,7 @@ public readonly struct CodeFormattingInterpolatedStringHandler
 
     public readonly void AppendFormatted(CompilationUnitDecl declaration)
     {
-        _formatter.Format($"{Separated(declaration.Namespaces, " ")}");
+        _formatter.Format($"{Delimited(declaration.Namespaces, "", "\n", "")}");
     }
 
     public readonly void AppendFormatted(NamespaceDecl declaration)
@@ -715,18 +691,9 @@ public readonly struct CodeFormattingInterpolatedStringHandler
 
     public readonly void AppendFormatted(TypeDecl declaration)
     {
-        _formatter.Format($"{Separated(declaration.Attributes, " ")}");
-        if (declaration.Attributes.Count > 0)
-        {
-            _formatter.writer.Write(" ");
-        }
+        _formatter.Format($"{Delimited(declaration.Attributes, "", "\n", "", true)}");
 
-        _formatter.Format($"{Separated(declaration.Modifiers, " ")}");
-        if (declaration.Modifiers.Count > 0)
-        {
-            _formatter.writer.Write(" ");
-        }
-
+        _formatter.Format($"{Delimited(declaration.Modifiers, "", " ", " ", true)}");
         _formatter.Format($"{declaration.Kind} {declaration.Name}");
         _formatter.Format($"{Delimited(declaration.TypeParameters, "<", ", ", ">", true)}");
         if (declaration.BaseTypes.Count > 0)
@@ -736,16 +703,10 @@ public readonly struct CodeFormattingInterpolatedStringHandler
 
         _formatter.Format($"{CurlyBraces(declaration.Members)}");
     }
-    //"\n{", " ", "}\n",
     public readonly void AppendFormatted(MemberDecl declaration)
     {
-        _formatter.Format($"{Separated(declaration.Attributes, " ")}");
-        if (declaration.Attributes.Count > 0)
-        {
-            _formatter.writer.Write(" ");
-        }
-
-        _formatter.Format($"{Delimited(declaration.Modifiers, "", " ", " ")}");
+        _formatter.Format($"{Delimited(declaration.Attributes, "", "\n", "")}");
+        _formatter.Format($"{Delimited(declaration.Modifiers, "", " ", " ", true)}");
 
         switch (declaration.Kind)
         {
