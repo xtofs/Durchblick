@@ -15,7 +15,7 @@ the source code
             sum += x;
 ```
 
-in the Calculate6 example gets decompiled to
+in the Calculate6 example the code gets decompiled to
 
 ```csharp
     local0 = local0 + local2;

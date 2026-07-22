@@ -281,6 +281,20 @@ internal sealed class Structurer
                     stack.Push(Expression.Literal(instruction.Operand.GetInt32(), BuiltInTypeReferences.Int));
                     break;
 
+                case ILOpCode.Ldnull:
+                    stack.Push(Expression.Literal(null!, BuiltInTypeReferences.Object));
+                    break;
+
+                case ILOpCode.Ldstr:
+                    stack.Push(Expression.Literal(instruction.Operand.GetString(), BuiltInTypeReferences.String));
+                    break;
+
+                case ILOpCode.Ldfld:
+                    var field = instruction.Operand.GetField();
+                    stack.Push(Expression.Member(stack.Pop(), field.Name, new SymbolReference(field.Name, SymbolKind.Field)));
+                    break;
+
+
                 case ILOpCode.Add:
                 case ILOpCode.Sub:
                 case ILOpCode.Mul:
@@ -311,6 +325,16 @@ internal sealed class Structurer
                 case ILOpCode.Brfalse:
                 case ILOpCode.Brfalse_s:
                     return new BlockSim(statements, ExitKind.ConditionalBranch, stack.Pop(), BranchOnTrue: false);
+
+                case ILOpCode.Beq:
+                case ILOpCode.Beq_s:
+                    var equalityRight = stack.Pop();
+                    var equalityLeft = stack.Pop();
+                    return new BlockSim(
+                        statements,
+                        ExitKind.ConditionalBranch,
+                        Expression.Binary(BinaryOperator.Equals, equalityLeft, equalityRight),
+                        BranchOnTrue: true);
 
                 case ILOpCode.Switch:
                     return new BlockSim(statements, ExitKind.Switch, stack.Pop(), false);

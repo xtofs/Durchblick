@@ -38,6 +38,7 @@ decompiler pipeline:
 | `src/Durchblick/Metadata`      | `Durchblick.Metadata`      | PE/PDB reading spike (unintegrated)                        |
 | `src/Durchblick/CSharp`        | `Durchblick.CSharp.*`      | The output model: C# AST, semantic binding, formatting     |
 | `src/Durchblick/Collections`   | `Durchblick.Collections`   | Immutable collection used by the AST                       |
+| `src/Durchblick.Tool`          | —                          | .NET tool CLI for decompiling an assembly file             |
 | `samples/disassemble`          | —                          | Demo: dumps IL, basic blocks, CFG edges, and block results |
 | `samples/decompile`            | —                          | Demo: decompiles specimen methods into C#-like output      |
 | `samples/CodeModel`            | —                          | Demo: builds, binds, and formats a C# AST by hand          |
@@ -58,12 +59,18 @@ dotnet run --project samples/disassemble
 dotnet run --project samples/decompile
 dotnet run --project samples/CodeModel
 dotnet run --project samples/OpCodeTable
+dotnet run --project src/Durchblick.Tool -- path/to/assembly.dll
 ```
 
 The disassemble demo reflects over the specimen methods in its own `specimen` namespace, dumps
 each method's basic blocks and CFG edges, and prints the per-block stack simulation when supported.
 The decompile demo reflects over its own specimen methods and prints reconstructed C#-like type and
 method declarations through the syntax model and formatter.
+
+The `Durchblick.Tool` project can be packed or installed as a .NET tool. It accepts one assembly
+file path, resolves dependencies beside that assembly, and writes decompiled C#-like output to
+standard output. Methods with IL that the current decompiler cannot reconstruct yet are skipped with
+a diagnostic on standard error.
 
 ## Documentation
 

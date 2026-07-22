@@ -6,6 +6,8 @@ namespace specimen;
 
 public class Class1
 {
+    private readonly int _field = 42;
+
     public static int Calculate1(int a, int b)
     {
         return a + b;
@@ -59,5 +61,25 @@ public class Class1
             sum += x;
         }
         return sum;
+    }
+
+    public int Calculate7(int a, int b)
+    {
+        if (a == b)
+        {
+            return 10;
+        }
+
+        return 20;
+    }
+
+    public string Calculate8()
+    {
+        return "hello";
+    }
+
+    public int Calculate9()
+    {
+        return _field;
     }
 }

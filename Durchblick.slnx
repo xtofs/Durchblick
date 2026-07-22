@@ -7,6 +7,7 @@
         <Project Path="samples/OpCodeTable/OpCodeTable.csproj" />
     </Folder>
     <Folder Name="/src/">
+        <Project Path="src/Durchblick.Tool/Durchblick.Tool.csproj" />
         <Project Path="src/Durchblick/Durchblick.csproj" />
     </Folder>
     <Folder Name="/tests/">

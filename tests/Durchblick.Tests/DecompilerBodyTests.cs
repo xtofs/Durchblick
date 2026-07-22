@@ -79,4 +79,48 @@ public class DecompilerBodyTests
         Assert.Contains(loopBody.Statements, statement => statement is IfStatement);
         Assert.Contains(body.Statements, statement => statement is ReturnStatement);
     }
+
+    [Theory]
+    [Specimen("specimen.Class1", "Calculate7")]
+    public void Reconstructs_if_from_equality_branch(MethodInfo method)
+    {
+        var body = Decompiler.DecompileBody(method);
+
+        var ifStatement = body.Statements.OfType<IfStatement>().Single();
+        Assert.IsType<IdentifierExpression>(ifStatement.Condition);
+        var declaration = body.Statements
+            .OfType<VariableDeclarationStatement>()
+            .Single(statement => statement.Declaration.Initializer is BinaryExpression { Operator: BinaryOperator.Equals });
+        var condition = Assert.IsType<BinaryExpression>(declaration.Declaration.Initializer);
+        Assert.Equal(BinaryOperator.Equals, condition.Operator);
+        Assert.IsType<IdentifierExpression>(condition.Left);
+        Assert.IsType<IdentifierExpression>(condition.Right);
+        Assert.Contains(body.Statements, statement => statement is ReturnStatement);
+    }
+
+    [Theory]
+    [Specimen("specimen.Class1", "Calculate8")]
+    public void Reconstructs_string_literal(MethodInfo method)
+    {
+        var body = Decompiler.DecompileBody(method);
+
+        var declaration = body.Statements.OfType<VariableDeclarationStatement>().Single();
+        var literal = Assert.IsType<LiteralExpression>(declaration.Declaration.Initializer);
+        Assert.Equal("hello", literal.Value);
+        Assert.Equal(BuiltInTypeReferences.String, literal.Type);
+        Assert.Contains(body.Statements, statement => statement is ReturnStatement);
+    }
+
+    [Theory]
+    [Specimen("specimen.Class1", "Calculate9")]
+    public void Reconstructs_instance_field_read(MethodInfo method)
+    {
+        var body = Decompiler.DecompileBody(method);
+
+        var declaration = body.Statements.OfType<VariableDeclarationStatement>().Single();
+        var memberAccess = Assert.IsType<MemberAccessExpression>(declaration.Declaration.Initializer);
+        Assert.Equal("_field", memberAccess.MemberName);
+        Assert.IsType<IdentifierExpression>(memberAccess.Target);
+        Assert.Contains(body.Statements, statement => statement is ReturnStatement);
+    }
 }

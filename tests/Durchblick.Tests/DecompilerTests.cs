@@ -1,6 +1,7 @@
 namespace Durchblick.Tests;
 
 using System.Reflection.Emit;
+using System.Reflection.Metadata;
 using Durchblick.ControlFlow;
 using Durchblick.IL;
 
@@ -46,6 +47,16 @@ public class DecompilerTests
 
             Assert.Equal(expected, block.Successors.Count);
         });
+    }
+
+    [Theory]
+    [Specimen("specimen.Class1", "Calculate8")]
+    public void Decodes_ldstr_metadata_token_to_string_operand(IReadOnlyList<Instruction> instructions)
+    {
+        var instruction = instructions.Single(instruction => instruction.ILOpCode == ILOpCode.Ldstr);
+
+        Assert.Equal(OperandType.InlineString, instruction.Operand.OperandType);
+        Assert.Equal("hello", instruction.Operand.GetString());
     }
 
     [Fact]
