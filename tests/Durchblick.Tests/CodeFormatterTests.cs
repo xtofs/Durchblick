@@ -41,10 +41,21 @@ public class CodeFormatterTests
     public void Logical_or_operand_of_logical_and_is_parenthesized()
         => Assert.Equal("a && (b || c)", Format(And(A, Or(B, C))));
 
+    [Fact]
+    public void Runtime_generic_type_reference_formats_generic_arguments()
+        => Assert.Equal("IEnumerator<int>", Format(Declaration.TypeRef(typeof(IEnumerator<int>))));
+
     private static string Format(Expression expression)
     {
         var writer = new StringWriter();
         new CodeFormatter(writer).Format($"{expression}");
+        return writer.ToString();
+    }
+
+    private static string Format(TypeReference typeReference)
+    {
+        var writer = new StringWriter();
+        new CodeFormatter(writer).Format($"{typeReference}");
         return writer.ToString();
     }
 

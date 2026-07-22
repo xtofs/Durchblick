@@ -335,10 +335,29 @@ internal sealed class Structurer
             arguments[parameterIndex] = stack.Pop();
         }
 
+        if (arguments.Length == 0 && TryGetGetterProperty(method, out var property))
+        {
+            var propertySymbol = new SymbolReference(property.Name, SymbolKind.Property);
+            stack.Push(method.IsStatic
+                ? Expression.Identifier(property.Name, propertySymbol)
+                : Expression.Member(stack.Pop(), property.Name, propertySymbol));
+            return;
+        }
+
         var symbol = new SymbolReference(method.Name, SymbolKind.Method);
         Expression target = method.IsStatic
             ? Expression.Identifier(method.Name, symbol)
             : Expression.Member(stack.Pop(), method.Name, symbol);
         stack.Push(Expression.Call(target, symbol, arguments));
+    }
+
+    private static bool TryGetGetterProperty(MethodInfo method, out PropertyInfo property)
+    {
+        const BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
+
+        property = method.DeclaringType?
+            .GetProperties(flags)
+            .SingleOrDefault(candidate => candidate.GetMethod == method)!;
+        return property is not null;
     }
 }

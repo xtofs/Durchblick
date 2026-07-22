@@ -24,7 +24,8 @@ public abstract record Declaration : AstNode
         => new TypeReference(name, @namespace, [.. (genericArguments ?? [])]);
 
     /// <summary>Maps a runtime <see cref="Type"/> to a type reference, using the C# keyword for built-in types.</summary>
-    public static TypeReference TypeRef(Type type) => TypeRef(FriendlyName(type));
+    public static TypeReference TypeRef(Type type)
+        => TypeRef(FriendlyName(type), genericArguments: type.IsGenericType ? type.GetGenericArguments().Select(TypeRef) : null);
 
     private static string FriendlyName(Type type) =>
         type == typeof(int) ? "int"
@@ -35,7 +36,13 @@ public abstract record Declaration : AstNode
         : type == typeof(string) ? "string"
         : type == typeof(object) ? "object"
         : type == typeof(void) ? "void"
-        : type.Name;
+        : StripGenericArity(type.Name);
+
+    private static string StripGenericArity(string name)
+    {
+        var arityMarker = name.IndexOf('`', StringComparison.Ordinal);
+        return arityMarker < 0 ? name : name[..arityMarker];
+    }
 
     public static TypeDecl Type(
         TypeKind kind,
