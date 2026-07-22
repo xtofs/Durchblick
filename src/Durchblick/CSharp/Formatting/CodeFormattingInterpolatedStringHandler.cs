@@ -142,6 +142,9 @@ public readonly struct CodeFormattingInterpolatedStringHandler
             case SymbolKind kind:
                 AppendFormatted(kind);
                 break;
+            case AccessorKind kind:
+                AppendFormatted(kind);
+                break;
             case PatternKind kind:
                 AppendFormatted(kind);
                 break;
@@ -383,6 +386,11 @@ public readonly struct CodeFormattingInterpolatedStringHandler
     public readonly void AppendFormatted(SymbolKind symbolKind)
     {
         _formatter.Format($"{symbolKind.ToString().ToLowerInvariant()}");
+    }
+
+    public readonly void AppendFormatted(AccessorKind accessorKind)
+    {
+        _formatter.Format($"{accessorKind.ToString().ToLowerInvariant()}");
     }
 
     public readonly void AppendFormatted(PatternKind patternKind)
@@ -753,7 +761,15 @@ public readonly struct CodeFormattingInterpolatedStringHandler
                 _formatter.Format($"{declaration.TypeReference} {declaration.Name};");
                 break;
             case MemberKind.Property:
-                _formatter.Format($"{declaration.TypeReference} {declaration.Name} {{ get; set; }}");
+                _formatter.Format($"{declaration.TypeReference} {declaration.Name}");
+                if (declaration.Accessors.Count == 0)
+                {
+                    _formatter.Format($" {{ get; set; }}");
+                }
+                else
+                {
+                    _formatter.Format($"{CurlyBraces(declaration.Accessors)}");
+                }
                 break;
             case MemberKind.Method:
                 _formatter.Format($"{declaration.TypeReference} {declaration.Name}");
@@ -786,6 +802,11 @@ public readonly struct CodeFormattingInterpolatedStringHandler
                 _formatter.Format($"{declaration.TypeReference} {declaration.Name};");
                 break;
         }
+    }
+
+    public readonly void AppendFormatted(AccessorDecl declaration)
+    {
+        _formatter.Format($"{declaration.Kind}{declaration.Body}");
     }
 
     public readonly void AppendFormatted(VariableDecl declaration)
@@ -829,6 +850,9 @@ public readonly struct CodeFormattingInterpolatedStringHandler
                 break;
             case MemberDecl md:
                 AppendFormatted(md);
+                break;
+            case AccessorDecl ad:
+                AppendFormatted(ad);
                 break;
             case VariableDecl vd:
                 AppendFormatted(vd);

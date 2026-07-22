@@ -159,6 +159,11 @@ internal sealed class SymbolCollector
     {
         if (memberDecl.Body is null)
         {
+            foreach (var accessor in memberDecl.Accessors)
+            {
+                BindStatement(accessor.Body, parentScope, typeResolver, diagnostics, declaredType);
+            }
+
             return;
         }
 

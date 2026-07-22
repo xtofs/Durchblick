@@ -296,6 +296,11 @@ internal sealed class SemanticModelBuilder
                 {
                     BindNode(member.Body, memberScope, exprInfos, stmtInfos, patternInfos, diagnostics);
                 }
+
+                foreach (var accessor in member.Accessors)
+                {
+                    BindNode(accessor.Body, memberScope, exprInfos, stmtInfos, patternInfos, diagnostics);
+                }
                 break;
 
             default:

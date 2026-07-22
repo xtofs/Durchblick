@@ -89,6 +89,7 @@ public abstract record Declaration : AstNode
         TypeReference type,
         IEnumerable<ParameterDecl> parameters,
         Statement? body,
+        IEnumerable<AccessorDecl> accessors,
         IEnumerable<Modifier> modifiers,
         IEnumerable<AttributeDecl> attributes)
         => new(
@@ -97,6 +98,7 @@ public abstract record Declaration : AstNode
             type,
             [.. parameters],
             body,
+            [.. accessors],
             [.. modifiers],
             [.. attributes]
         );
@@ -112,12 +114,14 @@ public abstract record Declaration : AstNode
             type,
             [],
             null,
+            [],
             modifiers ?? [],
             attributes ?? []);
 
     public static MemberDecl Property(
         string name,
         TypeReference type,
+        IEnumerable<AccessorDecl>? accessors = null,
         IEnumerable<Modifier>? modifiers = null,
         IEnumerable<AttributeDecl>? attributes = null)
         => Member(
@@ -126,6 +130,7 @@ public abstract record Declaration : AstNode
             type,
             [],
             null,
+            accessors ?? [],
             modifiers ?? [],
             attributes ?? []);
 
@@ -142,8 +147,12 @@ public abstract record Declaration : AstNode
             returnType,
             parameters ?? [],
             body,
+            [],
             modifiers ?? [],
             attributes ?? []);
+
+    public static AccessorDecl Accessor(AccessorKind kind, Statement body)
+        => new(kind, body);
 
     public static VariableDecl Variable(TypeReference type, string name, Expression? initializer)
         => new(type, name, initializer);
@@ -190,12 +199,18 @@ public sealed record MemberDecl(
     TypeReference TypeReference,
     ImmutableCollection<ParameterDecl> Parameters,
     Statement? Body,
+    ImmutableCollection<AccessorDecl> Accessors,
     ImmutableCollection<Modifier> Modifiers,
     ImmutableCollection<AttributeDecl> Attributes
 ) : Declaration
 {
 
 }
+
+public sealed record AccessorDecl(
+    AccessorKind Kind,
+    Statement Body
+) : Declaration;
 
 public sealed record VariableDecl(
     TypeReference TypeReference,

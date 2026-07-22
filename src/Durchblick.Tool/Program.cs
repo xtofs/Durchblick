@@ -73,6 +73,18 @@ internal static class Program
 
     private static TypeDecl? TryBuildType(Type type)
     {
+        var backingFields = type
+            .GetFields(DeclaredMembers)
+            .Where(IsAutoPropertyBackingField)
+            .OrderBy(field => field.MetadataToken)
+            .Select(BuildBackingField);
+
+        var properties = type
+            .GetProperties(DeclaredMembers)
+            .Select(TryBuildProperty)
+            .OfType<MemberDecl>()
+            .OrderBy(property => property.Name);
+
         var methods = type
             .GetMethods(DeclaredMembers)
             .Where(method => !method.IsSpecialName)
@@ -81,12 +93,14 @@ internal static class Program
             .OfType<MemberDecl>()
             .ToArray();
 
-        if (methods.Length == 0)
+        var members = backingFields.Concat(properties).Concat(methods).ToArray();
+
+        if (members.Length == 0)
         {
             return null;
         }
 
-        return Declaration.Class(type.Name, methods, modifiers: TypeModifiers(type));
+        return Declaration.Class(type.Name, members, modifiers: TypeModifiers(type));
     }
 
     private static bool IsCompilerGenerated(MemberInfo member)
@@ -129,6 +143,48 @@ internal static class Program
             MethodModifiers(method));
     }
 
+    private static MemberDecl? TryBuildProperty(PropertyInfo property)
+    {
+        var backingField = FindAutoPropertyBackingField(property);
+        if (backingField is null)
+        {
+            return null;
+        }
+
+        var accessors = new List<AccessorDecl>();
+        var backingFieldReference = Expression.Identifier(SanitizeBackingFieldName(backingField.Name), new SymbolReference(backingField.Name, SymbolKind.Field));
+
+        if (property.GetMethod is not null)
+        {
+            accessors.Add(Declaration.Accessor(
+                AccessorKind.Get,
+                Statement.Block([Statement.Return(backingFieldReference)])));
+        }
+
+        if (property.SetMethod is not null)
+        {
+            accessors.Add(Declaration.Accessor(
+                IsInitOnlySetter(property.SetMethod) ? AccessorKind.Init : AccessorKind.Set,
+                Statement.Block([
+                    Statement.Expr(Expression.Assign(
+                        backingFieldReference,
+                        Expression.Identifier("value", new SymbolReference("value", SymbolKind.Parameter))))
+                ])));
+        }
+
+        return Declaration.Property(
+            property.Name,
+            Declaration.TypeRef(property.PropertyType),
+            accessors,
+            PropertyModifiers(property));
+    }
+
+    private static MemberDecl BuildBackingField(FieldInfo field)
+        => Declaration.Field(
+            SanitizeBackingFieldName(field.Name),
+            Declaration.TypeRef(field.FieldType),
+            FieldModifiers(field));
+
     private static IEnumerable<Modifier> TypeModifiers(Type type)
     {
         if (type.IsPublic)
@@ -144,4 +200,54 @@ internal static class Program
             yield return Modifier.Public;
         }
     }
+
+    private static IEnumerable<Modifier> PropertyModifiers(PropertyInfo property)
+    {
+        var accessor = property.GetMethod ?? property.SetMethod;
+        if (accessor?.IsPublic == true)
+        {
+            yield return Modifier.Public;
+        }
+    }
+
+    private static IEnumerable<Modifier> FieldModifiers(FieldInfo field)
+    {
+        if (field.IsPrivate)
+        {
+            yield return Modifier.Private;
+        }
+
+        if (field.IsStatic)
+        {
+            yield return new Modifier(ModifierKind.Static);
+        }
+
+        if (field.IsInitOnly)
+        {
+            yield return new Modifier(ModifierKind.ReadOnly);
+        }
+    }
+
+    private static FieldInfo? FindAutoPropertyBackingField(PropertyInfo property)
+    {
+        var expectedName = $"<{property.Name}>k__BackingField";
+        var field = property.DeclaringType?
+            .GetField(expectedName, DeclaredMembers);
+        return field is not null && IsAutoPropertyBackingField(field) ? field : null;
+    }
+
+    private static bool IsAutoPropertyBackingField(FieldInfo field)
+        => field.Name.StartsWith("<", StringComparison.Ordinal)
+            && field.Name.EndsWith(">k__BackingField", StringComparison.Ordinal)
+            && field.IsDefined(typeof(CompilerGeneratedAttribute), inherit: false);
+
+    private static string SanitizeBackingFieldName(string name)
+        => name.StartsWith("<", StringComparison.Ordinal) && name.EndsWith(">k__BackingField", StringComparison.Ordinal)
+            ? name[1..].Replace(">k__", "__", StringComparison.Ordinal)
+            : name;
+
+    private static bool IsInitOnlySetter(MethodInfo setter)
+        => setter.ReturnParameter
+            .GetRequiredCustomModifiers()
+            .Any(modifier => modifier.FullName == "System.Runtime.CompilerServices.IsExternalInit");
 }

@@ -65,6 +65,30 @@ public class CodeFormatterTests
     public void Char_literal_escapes_single_quote()
         => Assert.Equal("'\\''", Format(Expression.Literal('\'', BuiltInTypeReferences.Char)));
 
+    [Fact]
+    public void Explicit_property_accessors_format_with_bodies()
+    {
+        var backingField = Expression.Identifier("Value__BackingField", new SymbolReference("Value__BackingField", SymbolKind.Field));
+        var property = Declaration.Property(
+            "Value",
+            BuiltInTypeReferences.Int,
+            [
+                Declaration.Accessor(AccessorKind.Get, Statement.Block([Statement.Return(backingField)])),
+                Declaration.Accessor(
+                    AccessorKind.Init,
+                    Statement.Block([
+                        Statement.Expr(Expression.Assign(
+                            backingField,
+                            Expression.Identifier("value", new SymbolReference("value", SymbolKind.Parameter))))
+                    ]))
+            ],
+            [Modifier.Public]);
+
+        Assert.Equal(
+            "public int Value\n{\n    get\n    {\n        return Value__BackingField;\n    }\n    \n    init\n    {\n        Value__BackingField = value;\n    }\n}",
+            Format(property));
+    }
+
     private static string Format(Expression expression)
     {
         var writer = new StringWriter();
@@ -76,6 +100,13 @@ public class CodeFormatterTests
     {
         var writer = new StringWriter();
         new CodeFormatter(writer).Format($"{typeReference}");
+        return writer.ToString();
+    }
+
+    private static string Format(MemberDecl member)
+    {
+        var writer = new StringWriter();
+        new CodeFormatter(writer).Format($"{member}");
         return writer.ToString();
     }
 
