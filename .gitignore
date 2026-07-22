@@ -482,3 +482,6 @@ $RECYCLE.BIN/
 *.swp
 d.txt
 out.txt
+spike.decompiled.cs
+.gitignore
+spike.errors.txt

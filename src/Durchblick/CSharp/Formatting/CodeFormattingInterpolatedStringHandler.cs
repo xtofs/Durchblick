@@ -394,6 +394,9 @@ public readonly struct CodeFormattingInterpolatedStringHandler
     {
         switch (expression.Value)
         {
+            case null:
+                _formatter.Format($"null");
+                break;
             case string s:
                 _formatter.Format($"\"{s}\"");
                 break;
@@ -437,7 +440,16 @@ public readonly struct CodeFormattingInterpolatedStringHandler
 
     public readonly void AppendFormatted(MemberAccessExpression expression)
     {
-        _formatter.Format($"{Inner(expression.Target, Precedence.Primary)}.{expression.MemberName}");
+        if (expression.MemberName.StartsWith('<'))
+        {
+            // TODO: this "fakes" the field access by extracting the property name from the field name
+            var memberName = expression.MemberName.SubstringBetween('<', '>');
+            _formatter.Format($"{Inner(expression.Target, Precedence.Primary)}.{memberName}");
+        }
+        else
+        {
+            _formatter.Format($"{Inner(expression.Target, Precedence.Primary)}.{expression.MemberName}");
+        }
     }
 
     public readonly void AppendFormatted(IndexAccessExpression expression)
@@ -538,7 +550,7 @@ public readonly struct CodeFormattingInterpolatedStringHandler
                 AppendFormatted(ae);
                 break;
             default:
-                _formatter.Format($"/* unknown expression {expr.GetType().Name} */");
+                _formatter.Format($"/* unknown expression {expr?.GetType()?.Name ?? "null"} */");
                 break;
         }
     }
@@ -837,5 +849,20 @@ public readonly struct CodeFormattingInterpolatedStringHandler
     internal readonly void Dispose()
     {
         _formatter.Dispose();
+    }
+}
+
+
+static class StringExtensions
+{
+    public static string SubstringBetween(this string str, char start, char end)
+    {
+        var startIndex = str.IndexOf(start);
+        var endIndex = str.IndexOf(end, startIndex + 1);
+        if (startIndex >= 0 && endIndex > startIndex)
+        {
+            return str.Substring(startIndex + 1, endIndex - startIndex - 1);
+        }
+        return string.Empty;
     }
 }

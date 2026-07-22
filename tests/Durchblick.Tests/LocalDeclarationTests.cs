@@ -17,7 +17,8 @@ public class LocalDeclarationTests
         var body = Decompiler.DecompileBody(method);
 
         var declaration = body.Statements.OfType<VariableDeclarationStatement>().First().Declaration;
-        Assert.Equal("int", declaration.TypeReference.Name);
+        Assert.Equal("Int32", declaration.TypeReference.Name);
+        Assert.Equal("System", declaration.TypeReference.Namespace);
         Assert.NotNull(declaration.Initializer);
 
         // The store it replaced is gone: nothing assigns that name any more.

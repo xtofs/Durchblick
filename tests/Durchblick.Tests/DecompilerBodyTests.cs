@@ -123,4 +123,55 @@ public class DecompilerBodyTests
         Assert.IsType<IdentifierExpression>(memberAccess.Target);
         Assert.Contains(body.Statements, statement => statement is ReturnStatement);
     }
+
+    [Theory]
+    [Specimen("specimen.Class1", "Calculate10")]
+    public void Reconstructs_object_creation(MethodInfo method)
+    {
+        var body = Decompiler.DecompileBody(method);
+
+        var declaration = body.Statements.OfType<VariableDeclarationStatement>().Single();
+        var creation = Assert.IsType<ObjectCreationExpression>(declaration.Declaration.Initializer);
+        Assert.Equal("Object", creation.Type.Name);
+        Assert.Empty(creation.Arguments);
+        Assert.Contains(body.Statements, statement => statement is ReturnStatement);
+    }
+
+    [Theory]
+    [Specimen("specimen.Class1", "Calculate11")]
+    public void Reconstructs_discarded_call_result(MethodInfo method)
+    {
+        var body = Decompiler.DecompileBody(method);
+
+        var statement = body.Statements.OfType<ExpressionStatement>().Single();
+        Assert.IsType<CallExpression>(statement.Expression);
+        Assert.Contains(body.Statements, statement => statement is ReturnStatement);
+    }
+
+    [Theory]
+    [Specimen("specimen.Class1", "Calculate12")]
+    public void Reconstructs_static_field_read(MethodInfo method)
+    {
+        var body = Decompiler.DecompileBody(method);
+
+        var declaration = body.Statements.OfType<VariableDeclarationStatement>().Single();
+        var identifier = Assert.IsType<IdentifierExpression>(declaration.Declaration.Initializer);
+        Assert.Equal("StaticField", identifier.Name);
+        Assert.Equal(SymbolKind.Field, identifier.Symbol.Kind);
+        Assert.Contains(body.Statements, statement => statement is ReturnStatement);
+    }
+
+    [Theory]
+    [Specimen("specimen.Class1", "Calculate13")]
+    public void Reconstructs_instance_field_assignment(MethodInfo method)
+    {
+        var body = Decompiler.DecompileBody(method);
+
+        var statement = body.Statements.OfType<ExpressionStatement>().Single();
+        var assignment = Assert.IsType<AssignExpression>(statement.Expression);
+        var target = Assert.IsType<MemberAccessExpression>(assignment.Target);
+        Assert.Equal("_mutableField", target.MemberName);
+        Assert.IsType<IdentifierExpression>(assignment.Value);
+        Assert.Contains(body.Statements, statement => statement is ReturnStatement);
+    }
 }

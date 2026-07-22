@@ -144,6 +144,12 @@ public readonly struct Operand
         return (MethodInfo)_object!;
     }
 
+    public ConstructorInfo GetConstructor()
+    {
+        Require(OperandType.InlineMethod);
+        return (ConstructorInfo)_object!;
+    }
+
     public FieldInfo GetField()
     {
         Require(OperandType.InlineField);

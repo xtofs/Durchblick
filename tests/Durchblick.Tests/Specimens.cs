@@ -7,6 +7,8 @@ namespace specimen;
 public class Class1
 {
     private readonly int _field = 42;
+    private static readonly int StaticField = 7;
+    private int _mutableField;
 
     public static int Calculate1(int a, int b)
     {
@@ -81,5 +83,25 @@ public class Class1
     public int Calculate9()
     {
         return _field;
+    }
+
+    public object Calculate10()
+    {
+        return new object();
+    }
+
+    public void Calculate11(System.Text.StringBuilder builder)
+    {
+        builder.Append("hello");
+    }
+
+    public int Calculate12()
+    {
+        return StaticField;
+    }
+
+    public void Calculate13(int value)
+    {
+        _mutableField = value;
     }
 }

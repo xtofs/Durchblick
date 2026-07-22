@@ -262,6 +262,18 @@ internal sealed class Structurer
                     statements.Add(Statement.Expr(Expression.Assign(_locals[instruction.Operand.GetVariableIndex()].Reference, stack.Pop())));
                     break;
 
+                case ILOpCode.Pop:
+                    statements.Add(Statement.Expr(stack.Pop()));
+                    break;
+
+                case ILOpCode.Stfld:
+                    var storedField = instruction.Operand.GetField();
+                    var storedValue = stack.Pop();
+                    statements.Add(Statement.Expr(Expression.Assign(
+                        Expression.Member(stack.Pop(), storedField.Name, new SymbolReference(storedField.Name, SymbolKind.Field)),
+                        storedValue)));
+                    break;
+
                 case ILOpCode.Ldc_i4_m1:
                     stack.Push(Expression.Literal(-1, BuiltInTypeReferences.Int));
                     break;
@@ -294,6 +306,11 @@ internal sealed class Structurer
                     stack.Push(Expression.Member(stack.Pop(), field.Name, new SymbolReference(field.Name, SymbolKind.Field)));
                     break;
 
+                case ILOpCode.Ldsfld:
+                    var staticField = instruction.Operand.GetField();
+                    stack.Push(Expression.Identifier(staticField.Name, new SymbolReference(staticField.Name, SymbolKind.Field)));
+                    break;
+
 
                 case ILOpCode.Add:
                 case ILOpCode.Sub:
@@ -310,6 +327,10 @@ internal sealed class Structurer
                 case ILOpCode.Call:
                 case ILOpCode.Callvirt:
                     PushCallExpression(stack, instruction.Operand.GetMethod());
+                    break;
+
+                case ILOpCode.Newobj:
+                    PushObjectCreationExpression(stack, instruction.Operand.GetConstructor());
                     break;
 
                 // branching instructions
@@ -373,6 +394,18 @@ internal sealed class Structurer
             ? Expression.Identifier(method.Name, symbol)
             : Expression.Member(stack.Pop(), method.Name, symbol);
         stack.Push(Expression.Call(target, symbol, arguments));
+    }
+
+    private static void PushObjectCreationExpression(Stack<Expression> stack, ConstructorInfo constructor)
+    {
+        var parameters = constructor.GetParameters();
+        var arguments = new Expression[parameters.Length];
+        for (var parameterIndex = parameters.Length - 1; parameterIndex >= 0; parameterIndex--)
+        {
+            arguments[parameterIndex] = stack.Pop();
+        }
+
+        stack.Push(Expression.New(Declaration.TypeRef(constructor.DeclaringType!), arguments, []));
     }
 
     private static bool TryGetGetterProperty(MethodInfo method, out PropertyInfo property)
