@@ -15,5 +15,8 @@
         "Pushref",
         "Stloc",
         "Structurer"
-    ]
+    ],
+    "chat.tools.terminal.autoApprove": {
+        "./decompile.sh": true
+    }
 }

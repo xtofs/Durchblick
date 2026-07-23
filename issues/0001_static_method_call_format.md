@@ -2,7 +2,7 @@
 id: 0001
 type: bug
 severity: medium
-status: open
+status: closed
 area: code formatter
 ---
 
