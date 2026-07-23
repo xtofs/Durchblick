@@ -213,4 +213,106 @@ public class DecompilerBodyTests
         Assert.Equal('}', argument.Value);
         Assert.Equal(BuiltInTypeReferences.Char, argument.Type);
     }
+
+    [Theory]
+    [Specimen("specimen.Class1", "Calculate17")]
+    public void Coerces_int32_literals_to_bool_return_values(MethodInfo method)
+    {
+        var body = Decompiler.DecompileBody(method);
+
+        var literals = body.Statements
+            .SelectMany(BooleanLiterals)
+            .ToArray();
+
+        Assert.Equal([false, true], literals.Select(literal => literal.Value));
+        Assert.All(literals, literal => Assert.Equal(BuiltInTypeReferences.Bool, literal.Type));
+    }
+
+    [Fact]
+    public void Reconstructs_record_equals_terminal_returns()
+    {
+        var method = typeof(specimen.RecordSpecimen).GetMethod(nameof(Equals), [typeof(specimen.RecordSpecimen)])
+            ?? throw new InvalidOperationException("Record Equals specimen was not found.");
+
+        var body = Decompiler.DecompileBody(method);
+
+        var returns = body.Statements
+            .SelectMany(ReturnStatements)
+            .ToArray();
+
+        Assert.DoesNotContain(returns, statement => statement.Expression is null);
+        Assert.Contains(returns, statement => statement.Expression is LiteralExpression { Value: true, Type: var type } && type == BuiltInTypeReferences.Bool);
+        Assert.Contains(returns, statement => statement.Expression is LiteralExpression { Value: false, Type: var type } && type == BuiltInTypeReferences.Bool);
+        Assert.Contains(returns, statement => statement.Expression is CallExpression);
+    }
+
+    private static IEnumerable<LiteralExpression> BooleanLiterals(Statement statement)
+    {
+        switch (statement)
+        {
+            case ReturnStatement { Expression: LiteralExpression literal }:
+                yield return literal;
+                break;
+            case VariableDeclarationStatement { Declaration.Initializer: LiteralExpression literal }:
+                yield return literal;
+                break;
+            case ExpressionStatement { Expression: AssignExpression { Value: LiteralExpression literal } }:
+                yield return literal;
+                break;
+            case BlockStatement blockStatement:
+                foreach (var nested in blockStatement.Statements.SelectMany(BooleanLiterals))
+                {
+                    yield return nested;
+                }
+
+                break;
+            case IfStatement ifStatement:
+                foreach (var nested in BooleanLiterals(ifStatement.Then))
+                {
+                    yield return nested;
+                }
+
+                if (ifStatement.Else is not null)
+                {
+                    foreach (var nested in BooleanLiterals(ifStatement.Else))
+                    {
+                        yield return nested;
+                    }
+                }
+
+                break;
+        }
+    }
+
+    private static IEnumerable<ReturnStatement> ReturnStatements(Statement statement)
+    {
+        switch (statement)
+        {
+            case ReturnStatement returnStatement:
+                yield return returnStatement;
+                break;
+            case BlockStatement blockStatement:
+                foreach (var nested in blockStatement.Statements.SelectMany(ReturnStatements))
+                {
+                    yield return nested;
+                }
+
+                break;
+            case IfStatement ifStatement:
+                foreach (var nested in ReturnStatements(ifStatement.Then))
+                {
+                    yield return nested;
+                }
+
+                if (ifStatement.Else is not null)
+                {
+                    foreach (var nested in ReturnStatements(ifStatement.Else))
+                    {
+                        yield return nested;
+                    }
+                }
+
+                break;
+        }
+    }
 }

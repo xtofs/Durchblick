@@ -31,6 +31,7 @@ internal sealed class Structurer
     private readonly DominatorTree _dominators;
     private readonly PostDominatorTree _postDominators;
     private readonly IReadOnlyDictionary<int, NaturalLoop> _loopsByHeader;
+    private readonly Type _returnType;
     private readonly Expression[] _arguments;
     private readonly LocalSlot[] _locals;
 
@@ -40,6 +41,7 @@ internal sealed class Structurer
         _dominators = DominatorTree.Build(graph);
         _postDominators = PostDominatorTree.Build(graph);
         _loopsByHeader = LoopAnalysis.Find(graph, _dominators).ToDictionary(loop => loop.Header);
+        _returnType = method.ReturnType;
         _arguments = Decompiler.CreateArgumentExpressions(method);
         _locals = Decompiler.CreateLocalSlots(method);
     }
@@ -84,10 +86,22 @@ internal sealed class Structurer
                     return statements;
 
                 case ExitKind.Branch:
+                    if (sim.Value is not null && IsReturnSinkBlock(block.Successors[0]))
+                    {
+                        statements.Add(Statement.Return(sim.Value));
+                        return statements;
+                    }
+
                     current = block.Successors[0];
                     break;
 
                 case ExitKind.FallThrough:
+                    if (sim.Value is not null && block.Successors.Count == 1 && IsReturnSinkBlock(block.Successors[0]))
+                    {
+                        statements.Add(Statement.Return(sim.Value));
+                        return statements;
+                    }
+
                     current = block.Successors.Count > 0 ? block.Successors[0] : stop;
                     break;
 
@@ -118,6 +132,11 @@ internal sealed class Structurer
 
         Statement? elseStatement = elseBody.Count > 0 ? Statement.Block(elseBody) : null;
         statements.Add(Statement.If(sim.Value!, Statement.Block(thenBody), elseStatement));
+
+        if (IsReturnSinkBlock(joinStop) && Terminates(thenBody) && Terminates(elseBody))
+        {
+            return stop;
+        }
 
         return joinStop;
     }
@@ -249,20 +268,20 @@ internal sealed class Structurer
                     break;
 
                 case ILOpCode.Stloc_0:
-                    statements.Add(Statement.Expr(Expression.Assign(_locals[0].Reference, stack.Pop())));
+                    statements.Add(StoreLocal(0, stack.Pop()));
                     break;
                 case ILOpCode.Stloc_1:
-                    statements.Add(Statement.Expr(Expression.Assign(_locals[1].Reference, stack.Pop())));
+                    statements.Add(StoreLocal(1, stack.Pop()));
                     break;
                 case ILOpCode.Stloc_2:
-                    statements.Add(Statement.Expr(Expression.Assign(_locals[2].Reference, stack.Pop())));
+                    statements.Add(StoreLocal(2, stack.Pop()));
                     break;
                 case ILOpCode.Stloc_3:
-                    statements.Add(Statement.Expr(Expression.Assign(_locals[3].Reference, stack.Pop())));
+                    statements.Add(StoreLocal(3, stack.Pop()));
                     break;
                 case ILOpCode.Stloc:
                 case ILOpCode.Stloc_s:
-                    statements.Add(Statement.Expr(Expression.Assign(_locals[instruction.Operand.GetVariableIndex()].Reference, stack.Pop())));
+                    statements.Add(StoreLocal(instruction.Operand.GetVariableIndex(), stack.Pop()));
                     break;
 
                 case ILOpCode.Pop:
@@ -344,7 +363,7 @@ internal sealed class Structurer
 
                 case ILOpCode.Br:
                 case ILOpCode.Br_s:
-                    return new BlockSim(statements, ExitKind.Branch, null, false);
+                    return new BlockSim(statements, ExitKind.Branch, stack.Count > 0 ? CoerceValue(stack.Pop(), _returnType) : null, false);
 
                 case ILOpCode.Brtrue:
                 case ILOpCode.Brtrue_s:
@@ -368,14 +387,14 @@ internal sealed class Structurer
                     return new BlockSim(statements, ExitKind.Switch, stack.Pop(), false);
 
                 case ILOpCode.Ret:
-                    return new BlockSim(statements, ExitKind.Return, stack.Count > 0 ? stack.Pop() : null, false);
+                    return new BlockSim(statements, ExitKind.Return, stack.Count > 0 ? CoerceValue(stack.Pop(), _returnType) : null, false);
 
                 default:
                     throw Unsupported(instruction, block);
             }
         }
 
-        return new BlockSim(statements, ExitKind.FallThrough, null, false);
+        return new BlockSim(statements, ExitKind.FallThrough, stack.Count > 0 ? CoerceValue(stack.Pop(), _returnType) : null, false);
     }
 
     private UnsupportedInstructionException Unsupported(Instruction instruction, BasicBlock block)
@@ -389,6 +408,58 @@ internal sealed class Structurer
             $"Unsupported IL opcode for body reconstruction at IL_{instruction.Offset:X4}: {instruction.OpCode}.",
             instruction,
             blockInstructions);
+    }
+
+    private bool IsBareReturnBlock(int blockIndex)
+    {
+        if (blockIndex < 0 || blockIndex >= _graph.Blocks.Count)
+        {
+            return false;
+        }
+
+        var block = _graph.Blocks[blockIndex];
+        return _graph.Instructions[block.EndIndex].ILOpCode == ILOpCode.Ret
+            && _graph.Instructions.Skip(block.StartIndex).Take(block.EndIndex - block.StartIndex).All(instruction => instruction.ILOpCode == ILOpCode.Nop);
+    }
+
+    private bool IsReturnSinkBlock(int blockIndex)
+    {
+        if (IsBareReturnBlock(blockIndex))
+        {
+            return true;
+        }
+
+        if (blockIndex < 0 || blockIndex >= _graph.Blocks.Count)
+        {
+            return false;
+        }
+
+        var block = _graph.Blocks[blockIndex];
+        return block.Successors.Count == 1
+            && IsBareReturnBlock(block.Successors[0])
+            && _graph.Instructions[block.EndIndex].ILOpCode is ILOpCode.Br or ILOpCode.Br_s
+            && _graph.Instructions.Skip(block.StartIndex).Take(block.EndIndex - block.StartIndex).All(instruction => instruction.ILOpCode == ILOpCode.Nop);
+    }
+
+    private static bool Terminates(IEnumerable<Statement> statements)
+    {
+        var last = statements.LastOrDefault();
+        return last is not null && Terminates(last);
+    }
+
+    private static bool Terminates(Statement statement)
+        => statement switch
+        {
+            ReturnStatement or ThrowStatement => true,
+            BlockStatement block => Terminates(block.Statements),
+            IfStatement { Else: not null } @if => Terminates(@if.Then) && Terminates(@if.Else),
+            _ => false,
+        };
+
+    private ExpressionStatement StoreLocal(int localIndex, Expression value)
+    {
+        var local = _locals[localIndex];
+        return Statement.Expr(Expression.Assign(local.Reference, CoerceValue(value, local.RuntimeType)));
     }
 
     private static void PushCallExpression(Stack<Expression> stack, MethodInfo method)
@@ -431,16 +502,18 @@ internal sealed class Structurer
         return arguments;
     }
 
-    private static Expression CoerceArgument(Expression argument, Type parameterType)
+    private static Expression CoerceArgument(Expression argument, Type parameterType) => CoerceValue(argument, parameterType);
+
+    private static Expression CoerceValue(Expression argument, Type targetType)
     {
         if (argument is LiteralExpression { Value: int value })
         {
-            if (parameterType == typeof(char) && value >= char.MinValue && value <= char.MaxValue)
+            if (targetType == typeof(char) && value >= char.MinValue && value <= char.MaxValue)
             {
                 return Expression.Literal((char)value, BuiltInTypeReferences.Char);
             }
 
-            if (parameterType == typeof(bool))
+            if (targetType == typeof(bool))
             {
                 return Expression.Literal(value != 0, BuiltInTypeReferences.Bool);
             }

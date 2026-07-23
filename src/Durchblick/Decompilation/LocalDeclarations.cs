@@ -2,8 +2,8 @@ namespace Durchblick.Decompilation;
 
 using Durchblick.CSharp.Syntax;
 
-/// <summary>A method's IL local slot: its generated name, declared type, and the identifier used to reference it.</summary>
-internal readonly record struct LocalSlot(string Name, TypeReference Type, IdentifierExpression Reference);
+/// <summary>A method's IL local slot: its generated name, declared type, CLR type, and the identifier used to reference it.</summary>
+internal readonly record struct LocalSlot(string Name, TypeReference Type, Type RuntimeType, IdentifierExpression Reference);
 
 /// <summary>
 /// Turns the bare assignments the <see cref="Structurer"/> emits for <c>stloc</c> into proper C#

@@ -212,7 +212,7 @@ public static class Decompiler
         {
             var name = $"local{local.LocalIndex}";
             var reference = Expression.Identifier(name, new SymbolReference(name, SymbolKind.Local));
-            return new LocalSlot(name, Declaration.TypeRef(local.LocalType), reference);
+            return new LocalSlot(name, Declaration.TypeRef(local.LocalType), local.LocalType, reference);
         })];
     }
 

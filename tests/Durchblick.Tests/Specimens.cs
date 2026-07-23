@@ -4,6 +4,8 @@
 // stay stable.
 namespace specimen;
 
+public record RecordSpecimen(int Value, string Name);
+
 public class Class1
 {
     private readonly int _field = 42;
@@ -118,5 +120,15 @@ public class Class1
     public void Calculate16(System.Text.StringBuilder builder)
     {
         builder.Append('}');
+    }
+
+    public bool Calculate17(int value)
+    {
+        if (value == 0)
+        {
+            return false;
+        }
+
+        return true;
     }
 }
