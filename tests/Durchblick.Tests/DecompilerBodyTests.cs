@@ -76,7 +76,14 @@ public class DecompilerBodyTests
 
         var whileStatement = body.Statements.OfType<WhileStatement>().Single();
         var loopBody = Assert.IsType<BlockStatement>(whileStatement.Body);
-        Assert.Contains(loopBody.Statements, statement => statement is VariableDeclarationStatement { Declaration.Initializer: CallExpression });
+        var enumeratorDeclaration = body.Statements
+            .OfType<VariableDeclarationStatement>()
+            .Single(statement => statement.Declaration.Initializer is CallExpression);
+        var getEnumeratorCall = Assert.IsType<CallExpression>(enumeratorDeclaration.Declaration.Initializer);
+        var rangeCall = Assert.IsType<CallExpression>(Assert.IsType<MemberAccessExpression>(getEnumeratorCall.Target).Target);
+        var rangeTarget = Assert.IsType<MemberAccessExpression>(rangeCall.Target);
+        Assert.Equal("Range", rangeTarget.MemberName);
+        Assert.Equal("Enumerable", Assert.IsType<TypeReferenceExpression>(rangeTarget.Target).Type.Name);
         Assert.Contains(loopBody.Statements, statement => statement is VariableDeclarationStatement { Declaration.Initializer: MemberAccessExpression { MemberName: "Current" } });
         Assert.Contains(loopBody.Statements, statement => statement is IfStatement);
         Assert.Contains(body.Statements, statement => statement is ReturnStatement);
@@ -246,6 +253,29 @@ public class DecompilerBodyTests
         Assert.Contains(returns, statement => statement.Expression is CallExpression);
     }
 
+    [Fact]
+    public void Reconstructs_static_property_getter_with_declaring_type_target()
+    {
+        var method = typeof(specimen.RecordSpecimen).GetMethod(nameof(GetHashCode), Type.EmptyTypes)
+            ?? throw new InvalidOperationException("Record GetHashCode specimen was not found.");
+
+        var body = Decompiler.DecompileBody(method);
+
+        var returnStatement = body.Statements.OfType<ReturnStatement>().Single();
+        var defaultProperties = Expressions(returnStatement.Expression)
+            .OfType<MemberAccessExpression>()
+            .Where(member => member.MemberName == "Default")
+            .Select(member => Assert.IsType<TypeReferenceExpression>(member.Target))
+            .ToArray();
+        var typeTarget = defaultProperties.Single(typeExpression =>
+            typeExpression.Type.GenericArguments.SingleOrDefault()?.Name == "Int32");
+
+        Assert.Equal("EqualityComparer", typeTarget.Type.Name);
+        Assert.Equal("System.Collections.Generic", typeTarget.Type.Namespace);
+        var genericArgument = Assert.Single(typeTarget.Type.GenericArguments);
+        Assert.Equal("Int32", genericArgument.Name);
+    }
+
     private static IEnumerable<LiteralExpression> BooleanLiterals(Statement statement)
     {
         switch (statement)
@@ -315,4 +345,33 @@ public class DecompilerBodyTests
                 break;
         }
     }
+
+    private static IEnumerable<Expression> Expressions(Expression expression)
+    {
+        yield return expression;
+
+        foreach (var child in ChildExpressions(expression).SelectMany(Expressions))
+        {
+            yield return child;
+        }
+    }
+
+    private static IEnumerable<Expression> ChildExpressions(Expression expression)
+        => expression switch
+        {
+            UnaryExpression unary => [unary.Operand],
+            BinaryExpression binary => [binary.Left, binary.Right],
+            ConditionalExpression conditional => [conditional.Condition, conditional.Then, conditional.Else],
+            CallExpression call => [call.Target, .. call.Arguments],
+            MemberAccessExpression memberAccess => [memberAccess.Target],
+            IndexAccessExpression indexAccess => [indexAccess.Target, .. indexAccess.Indices],
+            ObjectCreationExpression creation => [.. creation.Arguments, .. creation.Initializer.Select(assignment => assignment.Value)],
+            LambdaExpression lambda => lambda.Body is ExprBody expressionBody ? [expressionBody.Value] : [],
+            TupleExpression tuple => tuple.Elements,
+            CastExpression cast => [cast.Expression],
+            IsInstanceExpression isInstance => [isInstance.Expression],
+            AwaitExpression await => [await.Expression],
+            AssignExpression assign => [assign.Target, assign.Value],
+            _ => [],
+        };
 }

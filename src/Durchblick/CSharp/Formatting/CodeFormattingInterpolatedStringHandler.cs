@@ -441,6 +441,11 @@ public readonly struct CodeFormattingInterpolatedStringHandler
         _formatter.Format($"{expression.Name}");
     }
 
+    public readonly void AppendFormatted(TypeReferenceExpression expression)
+    {
+        _formatter.Format($"{expression.Type}");
+    }
+
     public readonly void AppendFormatted(UnaryExpression expression)
     {
         _formatter.Format($"{expression.Operator}{Inner(expression.Operand, Precedence.Unary)}");
@@ -541,6 +546,9 @@ public readonly struct CodeFormattingInterpolatedStringHandler
                 break;
             case IdentifierExpression ie:
                 AppendFormatted(ie);
+                break;
+            case TypeReferenceExpression tre:
+                AppendFormatted(tre);
                 break;
             case UnaryExpression ue:
                 AppendFormatted(ue);

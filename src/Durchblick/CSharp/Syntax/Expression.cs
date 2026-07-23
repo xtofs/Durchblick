@@ -13,6 +13,9 @@ public abstract record Expression : AstNode
     public static IdentifierExpression Identifier(string name, SymbolReference symbol)
         => new(name, symbol);
 
+    public static TypeReferenceExpression TypeReference(TypeReference type)
+        => new(type);
+
     public static UnaryExpression Unary(UnaryOperator op, Expression operand)
         => new(op, operand);
 
@@ -55,6 +58,7 @@ public abstract record Expression : AstNode
 
 public sealed record LiteralExpression(object Value, TypeReference Type) : Expression;
 public sealed record IdentifierExpression(string Name, SymbolReference Symbol) : Expression;
+public sealed record TypeReferenceExpression(TypeReference Type) : Expression;
 public sealed record UnaryExpression(UnaryOperator Operator, Expression Operand) : Expression;
 public sealed record BinaryExpression(BinaryOperator Operator, Expression Left, Expression Right) : Expression;
 public sealed record ConditionalExpression(Expression Condition, Expression Then, Expression Else) : Expression;
